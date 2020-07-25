@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block scripts %}
+<script type="text/javascript">
+	function myFunction(imgs) {
+	  // Get the expanded image
+	  var expandImg = document.getElementById("expandedImg");
+	  var tab = document.getElementById("tab");
+	  // Get the image text
+	  var imgText = document.getElementById("imgtext");
+	  // Use the same src in the expanded image as the image being clicked on from the grid
+	  expandImg.src = imgs.src;
+	  // Use the value of the alt attribute of the clickable image as text inside the expanded image
+	  imgText.innerHTML = imgs.alt;
+	  // Show the container element (hidden with CSS)
+	  expandImg.parentElement.style.display = 'block'
+	  expandImg.style.display = "block";
+	  tab.style.display = "block";
+
+	}	
+	function delete_img(imgs){
+	  	var tab = document.getElementById("tab");
+		var img = document.getElementById("expandedImg");
+		var img_src =  img.src;
+		var ask = window.confirm("Are you sure you want to delete this Image?");
+		if (ask){
+			img.parentElement.style.display = "None";
+			tab.style.display = "None";
+			img.style.display = 'None';
+			window.location = img_src+'/delete';	
+		}
+
+		
+	}
+</script>
+
+{% endblock %}
+
+
+{% block content %}
+<h1>Logged in</h1>
+{{usernm}}
+<a href="{{url_for('logout')}}">Log out</a>
+<div class="card">
+    <h1>Customize Bot</h1>
+    <form action="" method="post" novalidate enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.DM_reply_time.label }}
+            <small>(in minutes)</small>
+            {{ form.DM_reply_time() }}
+        </p>
+        <p>
+            {{ form.tweet_time.label }}
+            {{ form.tweet_time() }}
+        </p>
+        <p>
+            {{ form.names.label }}<br>
+            <small>(Enter names seperated by space)</small><br>
+            {{ form.names() }}
+        </p>
+        <p>
+            {{ form.files.label }}<br>
+
+            {{ form.files() }}
+        </p>
+        
+        
+        <p>{{ form.submit() }}</p>
+    </form>
+
+    </div>
+    <div>
+    	<h1>Uploaded Images</h1>
+    	<div class='gallery'>
+    		<div class="row">
+    		{% if files %}
+    			{% for file in files %}
+    				<div class="column">
+					    <img src="{{file}}" alt="{{file.split('/')[-1]}}" onclick="myFunction(this);">
+					</div>
+    			{% endfor %}
+    		{% endif %}
+    		</div>
+
+
+		<!-- The expanding image container -->
+		<div class="container">
+		  <!-- Close the image -->
+		  
+		  <div style="background-color: black; text-align: right;" class="dispclass" id="tab">
+		  <div id="imgtext" style="text-align: left;float: left; padding: 8px; font-size: 15px;"></div>
+		  <span onclick="document.getElementById('expandedImg').style.display='none'; this.parentElement.style.display='none';" style="margin-right: 10px;" class="closebtn">&times;</span>
+		  <span onclick="delete_img(this);" style="margin-right: 10px; font-size: 23px; height: 100%;" class="fa closebtn">&#xf014;</span><br>
+		  
+		  </div>
+		  <!-- Expanded image -->
+		  <img id="expandedImg" style="width:100%" class="dispclass">
+
+		  
+		  
+		
+		</div>
+
+		</div>
+</div>
+
+{% endblock %}
