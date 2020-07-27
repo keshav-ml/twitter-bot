@@ -67,17 +67,20 @@ def customize_bot():
 	if form.validate_on_submit():
 		ids = " ".join(form.names.data.strip().split(' '))
 		if usr_settings.first():
-			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids))
+			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data))
 		else:
-			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids)
+			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data)
 			db.session.add(new_settings)
 		db.session.commit()
 
 		files = form.files.data
-		
-		for file in files:
-			files_filenames = secure_filename(file.filename)
-			file.save(os.path.join(path_to_media, files_filenames))
+		if files[0].filename != "":
+			for file in files:
+				print(file)
+
+				files_filenames = secure_filename(file.filename)
+				print(files_filenames)
+				file.save(os.path.join(path_to_media, files_filenames))
 			
 		
 		return redirect(url_for('index'))

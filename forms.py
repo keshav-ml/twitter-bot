@@ -34,10 +34,12 @@ class RegistrationForm(FlaskForm):
 
 
 class CustomizeForm(FlaskForm):
-	DM_reply_time = StringField("Dm reply time")
-	tweet_time = SelectField("Tweet frequency",choices=[("hour", "Hourly"), ('daily', 'Daily'), ('week', 'Weekly')])
+	DM_reply_time = StringField("Dm reply time", validators=[DataRequired()])
+	tweet_time = SelectField("Tweet frequency",choices=[("hour", "Hourly"), ('daily', 'Daily'), ('week', 'Weekly')], validators=[DataRequired()])
 	files = MultipleFileField("Selelct files for bot to use.")
 	names = TextAreaField("Enter twitter id names, that you wat the bot to reply.")
+	questions = StringField()
 	submit = SubmitField('Save')		
+
 		
 		

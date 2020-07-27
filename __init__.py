@@ -65,12 +65,14 @@ class User_settings(db.Model):
 	DM_reply_time = db.Column(db.String(),nullable=False)
 	tweet_time = db.Column(db.String(),unique=False,nullable=False)
 	names = db.Column(db.String(),unique=False,nullable=True)
+	questions = db.Column(db.String(),nullable=True)
 
-	def __init__(self, user_id,DM_reply_time,tweet_time,names):
+	def __init__(self, user_id,DM_reply_time,tweet_time,names,questions):
 		self.user_id = user_id
 		self.DM_reply_time = DM_reply_time
 		self.tweet_time = tweet_time
 		self.names = names
+		self.questions = questions
 		
 	def __repr__(self):
 		return '<User %r>'%self.user_id
@@ -81,6 +83,7 @@ class User_settings(db.Model):
 			tweet_time = self.tweet_time
 			files = None
 			names = self.names
+			questions = self.questions
 		return temp()
 			
 				

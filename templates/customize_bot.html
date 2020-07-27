@@ -2,6 +2,7 @@
 
 {% block scripts %}
 <script type="text/javascript">
+	var tot_rows = -1;
 	function myFunction(imgs) {
 	  // Get the expanded image
 	  var expandImg = document.getElementById("expandedImg");
@@ -32,18 +33,49 @@
 
 		
 	}
+	function create_row() {
+	  window.tot_rows += 1
+	  var table = document.getElementById("qna");
+	  var row = table.insertRow(window.tot_rows);
+	  var cell1 = row.insertCell(0);
+	  var cell2 = row.insertCell(1);
+	  cell1.innerHTML = "<input type='text' id='q"+window.tot_rows+"' placeholder='Enter questions here' style='width:100%;'>";
+	  cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' placeholder='Enter answers here' style='width:100%;'>";
+	  
+	  console.log(window.tot_rows)
+	}
+
+	function delete_row() {
+	  document.getElementById("qna").deleteRow(window.tot_rows);
+	  window.tot_rows -= 1
+	}
+
+	function compile_qus(){
+		var que_ans = {};
+		for (var i = 0; i <= window.tot_rows; i++) {
+			que_ans[document.getElementById('q'+i).value] = document.getElementById('a'+i).value
+		}
+		document.getElementById("{{form.questions.id}}").value = JSON.stringify(que_ans);
+		
+	}
 </script>
 
 {% endblock %}
 
 
 {% block content %}
+<div style="float: left; width: 100%;">
 <h1>Logged in</h1>
 {{usernm}}
-<a href="{{url_for('logout')}}">Log out</a>
-<div class="card">
+<a href="{{url_for('logout')}}">Log out</a>	
+</div>
+
+
+<div style="float: left; width: 100%;">
+<form action="" method="post" novalidate enctype="multipart/form-data" onsubmit="compile_qus();">
+<div class="card" style="float: left; width: 30%;">
     <h1>Customize Bot</h1>
-    <form action="" method="post" novalidate enctype="multipart/form-data">
+    
         {{ form.hidden_tag() }}
         <p>
             {{ form.DM_reply_time.label }}
@@ -64,13 +96,29 @@
 
             {{ form.files() }}
         </p>
-        
+        <p style="display: none;" >
+        	{{ form.questions() }}
+        </p>
         
         <p>{{ form.submit() }}</p>
-    </form>
+    
 
     </div>
-    <div>
+    <div style="float: left; height: 100%; width: 60%; padding: 10px;" class="card">
+    	<fieldset>
+    	<legend>Questions</legend>
+	    	<table id="qna" style="width: 100%;"cellpadding="10px">
+			</table>
+			<br>
+
+			<button type="button" onclick="create_row()">Create question</button>
+			<button type="button" onclick="delete_row()">Delete question</button>
+			
+		</fieldset>
+    </div>
+    </form>
+</div>
+     <div style="float: left; width: 100%;">
     	<h1>Uploaded Images</h1>
     	<div class='gallery'>
     		<div class="row">
@@ -104,5 +152,22 @@
 
 		</div>
 </div>
+<script type="text/javascript">
+    	var qna_field = document.getElementById('{{form.questions.id}}');
+		var table_widget = document.getElementById('qna');
+		if (qna_field.value != ""){
+			qna_obj = JSON.parse(qna_field.value)
+			for(const key in qna_obj){
+				window.tot_rows += 1
+				var row = table_widget.insertRow(window.tot_rows);
+		  		var cell1 = row.insertCell(0);
+		  		var cell2 = row.insertCell(1);
+		  		cell1.innerHTML = "<input type='text' id='q"+window.tot_rows+"' value='"+key+"' style='width:100%;'>";
+		  		cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' value='"+qna_obj[key]+"' style='width:100%;'>";
+				
 
+			}
+			
+		}
+    </script>
 {% endblock %}
