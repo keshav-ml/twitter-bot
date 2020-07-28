@@ -54,6 +54,10 @@ def register():
 def customize_bot():	
 	usernm = current_user.username
 	user = User.query.filter_by(username=usernm).first()
+	auth = tweepy.OAuthHandler(api_key,api_sec_key)
+	auth.set_access_token(user.acc_token,user.acc_secret)
+	api = tweepy.API(auth)
+	user_obj = api.me()
 	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'
 	if not os.path.exists(path_to_media):
 		os.makedirs(path_to_media)
@@ -84,12 +88,18 @@ def customize_bot():
 			
 		
 		return redirect(url_for('index'))
-	return render_template('customize_bot.html',form=form,usernm=usernm,settings = usr_settings.first(),files = f_names)
+	return render_template('customize_bot.html',form=form,usernm=usernm,settings = usr_settings.first(),files = f_names,user_obj = user_obj)
 
 @app.route('/index')
+@login_required
 def index():
     usernm = current_user.username
-    return render_template('index.html',usernm=usernm)
+    user = User.query.filter_by(username=usernm).first()
+    auth = tweepy.OAuthHandler(api_key,api_sec_key)
+    auth.set_access_token(user.acc_token,user.acc_secret)
+    api = tweepy.API(auth)
+    user_obj = api.me()
+    return render_template('index.html',usernm=usernm,user_obj=user_obj)
 
 
 @app.route('/logout')

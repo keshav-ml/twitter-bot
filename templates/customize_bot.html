@@ -64,16 +64,10 @@
 
 
 {% block content %}
-<div style="float: left; width: 100%;">
-<h1>Logged in</h1>
-{{usernm}}
-<a href="{{url_for('logout')}}">Log out</a>	
-</div>
-
-
-<div style="float: left; width: 100%;">
+<div class="container-fluid py-2">
+<div style="float: left; width: 100%;" class="col">
 <form action="" method="post" novalidate enctype="multipart/form-data" onsubmit="compile_qus();">
-<div class="card" style="float: left; width: 30%;">
+<div class="card col" style="float: left; width: 30%;">
     <h1>Customize Bot</h1>
     
         {{ form.hidden_tag() }}
@@ -104,12 +98,19 @@
     
 
     </div>
-    <div style="float: left; height: 100%; width: 60%; padding: 10px;" class="card">
+    <div style="float: left; height: 100%; width: 60%; padding: 10px;" class="card col">
     	<fieldset>
     	<legend>Questions</legend>
 	    	<table id="qna" style="width: 100%;"cellpadding="10px">
 			</table>
 			<br>
+
+			  <div class="controls-top">
+			    <a class="btn-floating btn-secondary" href="#carousel-with-lb" data-slide="prev"><i
+			        class="fas fa-chevron-plus"></i></a>
+			    <a class="btn-floating btn-secondary" href="#carousel-with-lb" data-slide="next"><i
+			        class="fas fa-chevron-minus"></i></a>
+			  </div>
 
 			<button type="button" onclick="create_row()">Create question</button>
 			<button type="button" onclick="delete_row()">Delete question</button>
@@ -151,6 +152,7 @@
 		</div>
 
 		</div>
+</div>
 </div>
 <script type="text/javascript">
     	var qna_field = document.getElementById('{{form.questions.id}}');
