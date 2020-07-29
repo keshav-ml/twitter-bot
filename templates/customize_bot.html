@@ -42,7 +42,6 @@
 	  cell1.innerHTML = "<input type='text' id='q"+window.tot_rows+"' placeholder='Enter questions here' style='width:100%;'>";
 	  cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' placeholder='Enter answers here' style='width:100%;'>";
 	  
-	  console.log(window.tot_rows)
 	}
 
 	function delete_row() {
@@ -64,11 +63,11 @@
 
 
 {% block content %}
-<div class="container-fluid py-2">
-<div style="float: left; width: 100%;" class="col">
+<div class="container-fluid ">
+<div style="float: left; width: 100%;" class="container-fluid ">
 <form action="" method="post" novalidate enctype="multipart/form-data" onsubmit="compile_qus();">
-<div class="card col" style="float: left; width: 30%;">
-    <h1>Customize Bot</h1>
+<div class="card py-2" style="float: left; width: 30%;">
+    <p class="h2" style="font-size: 30px;">Customize Bot</p>
     
         {{ form.hidden_tag() }}
         <p>
@@ -98,29 +97,27 @@
     
 
     </div>
-    <div style="float: left; height: 100%; width: 60%; padding: 10px;" class="card col">
+    </form>
+    <div style="float: left; height: 100%; width: 60%;" class="card col py-2">
     	<fieldset>
     	<legend>Questions</legend>
-	    	<table id="qna" style="width: 100%;"cellpadding="10px">
+	    	<table id="qna" style="width: 100%;" cellpadding="10px">
 			</table>
-			<br>
+			
+			<div style="height: 25px;" class="text-center">
+			<img onclick="delete_row()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;">
+			<img onclick="create_row()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;">
 
-			  <div class="controls-top">
-			    <a class="btn-floating btn-secondary" href="#carousel-with-lb" data-slide="prev"><i
-			        class="fas fa-chevron-plus"></i></a>
-			    <a class="btn-floating btn-secondary" href="#carousel-with-lb" data-slide="next"><i
-			        class="fas fa-chevron-minus"></i></a>
-			  </div>
-
-			<button type="button" onclick="create_row()">Create question</button>
-			<button type="button" onclick="delete_row()">Delete question</button>
+			
+			</div>
+			
 			
 		</fieldset>
     </div>
-    </form>
+    
 </div>
      <div style="float: left; width: 100%;">
-    	<h1>Uploaded Images</h1>
+    	<h1 align="center">Uploaded Images</h1>
     	<div class='gallery'>
     		<div class="row">
     		{% if files %}
@@ -167,7 +164,7 @@
 		  		cell1.innerHTML = "<input type='text' id='q"+window.tot_rows+"' value='"+key+"' style='width:100%;'>";
 		  		cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' value='"+qna_obj[key]+"' style='width:100%;'>";
 				
-
+		  		
 			}
 			
 		}

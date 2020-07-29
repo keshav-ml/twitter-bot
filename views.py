@@ -4,7 +4,8 @@ from flask_login import current_user, login_user, login_required, logout_user
 from __init__ import User, User_settings
 from werkzeug.utils import secure_filename
 import os
-
+import pandas as pd
+import numpy as np
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
 
@@ -99,7 +100,24 @@ def index():
     auth.set_access_token(user.acc_token,user.acc_secret)
     api = tweepy.API(auth)
     user_obj = api.me()
-    return render_template('index.html',usernm=usernm,user_obj=user_obj)
+    dms = api.list_direct_messages(count=400)
+    receiveText = []; recieveTime = []; sender_id = []; reciever_id = [];
+    for dm in dms:
+    	receiveText.append(dm.__dict__['message_create']['message_data']['text'])
+    	recieveTime.append(dm.__dict__['created_timestamp'])
+    	sender_id.append(dm.__dict__['message_create']['sender_id'])
+    	reciever_id.append(dm.__dict__['message_create']['target']['recipient_id'])
+
+    dm_df = pd.DataFrame({'receiveText':receiveText,'recieveTime':recieveTime,'sender_id':sender_id,'reciever_id':reciever_id})
+
+    dm_df['sender_name'] = dm_df['sender_id'].apply(lambda s: api.get_user(int(s)).screen_name)
+    dm_df['sender_id'] = dm_df['sender_id'].astype(str)
+    dm_df['reciever_id'] = dm_df['reciever_id'].astype(str)
+
+    convos = [api.get_user(n) for n in np.unique(dm_df[dm_df['sender_id'] != str(user_obj.id)]['sender_name'])]
+    
+
+    return render_template('index.html',usernm=usernm,user_obj=user_obj,dm_df = dm_df,conversations=convos)
 
 
 @app.route('/logout')

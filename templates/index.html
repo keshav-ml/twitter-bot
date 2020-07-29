@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
-
+<div class="container-fluid bg-dark" style="width: 30%; height: 100%;">
+	{% for convo in conversations %}
+		<div>
+			<img src="{{convo.profile_image_url}}" class="img-fluid navbar-brand rounded-circle py-0" style="float: left;">
+			<div style="float: left;">{{convo.screen_name}}</div>	
+		</div>
+		
+	{% endfor %}
+	
+</div>
 
 {% endblock  %}
