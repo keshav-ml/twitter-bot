@@ -4,10 +4,18 @@ from flask_login import current_user, login_user, login_required, logout_user
 from __init__ import User, User_settings
 from werkzeug.utils import secure_filename
 import os
+import threading
+import time
 import pandas as pd
 import numpy as np
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
+import logging
+from bot import bot, bot_tweet
+
+format = "%(asctime)s: %(message)s"
+logging.basicConfig(format=format, level=logging.INFO,
+                        datefmt="%H:%M:%S")
 
 @app.route("/",methods=['POST','GET'])
 @app.route("/login",methods=['POST','GET'])
@@ -100,25 +108,57 @@ def index():
     auth.set_access_token(user.acc_token,user.acc_secret)
     api = tweepy.API(auth)
     user_obj = api.me()
-    dms = api.list_direct_messages(count=400)
-    receiveText = []; recieveTime = []; sender_id = []; reciever_id = [];
-    for dm in dms:
-    	receiveText.append(dm.__dict__['message_create']['message_data']['text'])
-    	recieveTime.append(dm.__dict__['created_timestamp'])
-    	sender_id.append(dm.__dict__['message_create']['sender_id'])
-    	reciever_id.append(dm.__dict__['message_create']['target']['recipient_id'])
+    return render_template('index.html',user_obj=user_obj)
 
-    dm_df = pd.DataFrame({'receiveText':receiveText,'recieveTime':recieveTime,'sender_id':sender_id,'reciever_id':reciever_id})
 
-    dm_df['sender_name'] = dm_df['sender_id'].apply(lambda s: api.get_user(int(s)).screen_name)
-    dm_df['sender_id'] = dm_df['sender_id'].astype(str)
-    dm_df['reciever_id'] = dm_df['reciever_id'].astype(str)
+@app.route('/activate')
+@login_required
+def activate_bot():
+	bot_status = True
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	user_set = User_settings.query.filter_by(user_id=user.id).first()
+	auth = tweepy.OAuthHandler(api_key,api_sec_key)
+	auth.set_access_token(user.acc_token,user.acc_secret)
+	api = tweepy.API(auth)
+	user_obj = api.me()
 
-    convos = [api.get_user(n) for n in np.unique(dm_df[dm_df['sender_id'] != str(user_obj.id)]['sender_name'])]
-    
+	def func():
+		print('starting')
+		i = 0
+		while True:
+			if i == 3:
+				break
+			bot_tweet(api,"Tweet")
+			if user_set.tweet_time == 'hour':
+				print('waiting')
+				time.sleep(60)
+			i += 1
 
-    return render_template('index.html',usernm=usernm,user_obj=user_obj,dm_df = dm_df,conversations=convos)
+		print('exit')
+	
+	th = threading.Thread(name=usernm,target=func)
+	th.setDaemon(True) 
+	th.start()
+	return render_template('index.html',bot_status=bot_status,user_obj=user_obj)
 
+@app.route('/deactivate')
+@login_required
+def deactivate_bot():
+	bot_status = False
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	auth = tweepy.OAuthHandler(api_key,api_sec_key)
+	auth.set_access_token(user.acc_token,user.acc_secret)
+	api = tweepy.API(auth)
+	user_obj = api.me()
+	main_th = threading.current_thread()
+	for t in threading.enumerate():
+		if t is main_th:
+			continue
+		if t.getName() == usernm:
+			t.join()
+	return render_template('index.html',bot_status=bot_status,user_obj=user_obj)
 
 @app.route('/logout')
 def logout():

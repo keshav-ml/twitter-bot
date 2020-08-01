@@ -1,5 +1,39 @@
 {% extends "base.html" %}
+
 {% block content %}
+
+<div>
+	<div class="col-2">
+      <h4>Activate bot</h4>
+    </div>	
+	<div class="col-sm-5">
+      <button id="tog_but" type="button" class="btn btn-lg btn-success" onclick="toggle_but()"> 
+      	Start
+      </button>
+    </div>
+</div>
+<script type="text/javascript">
+	var but = document.getElementById("tog_but");
+	{% if bot_status %}	
+		window.but.innerHTML = "Stop"
+		window.but.setAttribute('class','btn btn-lg btn-danger')	
+	{% else %}
+		window.but.innerHTML = "Start"
+		window.but.setAttribute('class','btn btn-lg btn-success')	
+	{% endif %}
+	function toggle_but(){
+		if(window.but.innerHTML=='Start'){
+			
+			window.location = "{{url_for('activate_bot')}}";
+		}else{
+			
+			window.location = "{{url_for('deactivate_bot')}}";
+		}
+	}
+		
+	
+</script>
+
 <div class="messaging">
 	<div class="inbox_msg">
 		<div class="inbox_people">
@@ -24,7 +58,6 @@
 	<div class="mesgs">
           <div class="msg_history">
             <div class="incoming_msg">
-              
               <div class="received_msg">
                 <div class="received_withd_msg">
                   <p>Test which is a new approach to have all
@@ -32,6 +65,7 @@
                   <span class="time_date"> 11:01 AM    |    June 9</span></div>
               </div>
             </div>
+
             <div class="outgoing_msg">
               <div class="sent_msg">
                 <p>Test which is a new approach to have all
@@ -71,6 +105,6 @@
         </div>
       </div>
 
-</div>
+
 {% endblock  %}
 	
