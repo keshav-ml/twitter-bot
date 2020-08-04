@@ -11,7 +11,7 @@ import numpy as np
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
 import logging
-from bot import bot, bot_tweet
+from bot import Bot
 
 format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO,
@@ -22,7 +22,7 @@ logging.basicConfig(format=format, level=logging.INFO,
 def login():
 
 	if current_user.is_authenticated:
-		return redirect(url_for('customize_bot'))
+		return redirect(url_for('index'))
 	form = LoginForm()
 	if form.validate_on_submit():
 		user = User.query.filter_by(username=form.username.data).first()
@@ -80,9 +80,9 @@ def customize_bot():
 	if form.validate_on_submit():
 		ids = " ".join(form.names.data.strip().split(' '))
 		if usr_settings.first():
-			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data))
+			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data,tweets=form.tweets.data))
 		else:
-			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data)
+			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data,tweets=form.tweets.data)
 			db.session.add(new_settings)
 		db.session.commit()
 
@@ -100,65 +100,45 @@ def customize_bot():
 	return render_template('customize_bot.html',form=form,usernm=usernm,settings = usr_settings.first(),files = f_names,user_obj = user_obj)
 
 @app.route('/index')
+@app.route('/index/<command>')
 @login_required
-def index():
-    usernm = current_user.username
-    user = User.query.filter_by(username=usernm).first()
-    auth = tweepy.OAuthHandler(api_key,api_sec_key)
-    auth.set_access_token(user.acc_token,user.acc_secret)
-    api = tweepy.API(auth)
-    user_obj = api.me()
-    return render_template('index.html',user_obj=user_obj)
-
-
-@app.route('/activate')
-@login_required
-def activate_bot():
-	bot_status = True
+def index(command=None):
 	usernm = current_user.username
 	user = User.query.filter_by(username=usernm).first()
 	user_set = User_settings.query.filter_by(user_id=user.id).first()
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
 	auth.set_access_token(user.acc_token,user.acc_secret)
+
 	api = tweepy.API(auth)
 	user_obj = api.me()
-
-	def func():
-		print('starting')
-		i = 0
-		while True:
-			if i == 3:
-				break
-			bot_tweet(api,"Tweet")
-			if user_set.tweet_time == 'hour':
-				print('waiting')
-				time.sleep(60)
-			i += 1
-
-		print('exit')
-	
-	th = threading.Thread(name=usernm,target=func)
-	th.setDaemon(True) 
-	th.start()
-	return render_template('index.html',bot_status=bot_status,user_obj=user_obj)
-
-@app.route('/deactivate')
-@login_required
-def deactivate_bot():
 	bot_status = False
-	usernm = current_user.username
-	user = User.query.filter_by(username=usernm).first()
-	auth = tweepy.OAuthHandler(api_key,api_sec_key)
-	auth.set_access_token(user.acc_token,user.acc_secret)
-	api = tweepy.API(auth)
-	user_obj = api.me()
+	stop_eve = threading.Event()
 	main_th = threading.current_thread()
+	if command == 'activate':
+		bot = Bot(api=api,user = user,user_set = user_set)		
+		logging.info("Thread created")
+		th = threading.Thread(name=usernm,target=bot.bot_start,args=(stop_eve,))
+		th.setDaemon(True) 
+		logging.info("Thread started")
+		th.start()
+	elif command == 'deactivate':
+		logging.info("stopping thread")
+		for t in threading.enumerate():
+			print(t.getName())
+			if t is main_th:
+				continue
+			if t.getName() == usernm:
+				stop_eve.set()
+				logging.info("Thread stoped")
 	for t in threading.enumerate():
+		print(t.getName())
 		if t is main_th:
 			continue
 		if t.getName() == usernm:
-			t.join()
-	return render_template('index.html',bot_status=bot_status,user_obj=user_obj)
+			if t.is_alive():
+				bot_status = True
+
+	return render_template('index.html',user_obj=user_obj,bot_status=bot_status)
 
 @app.route('/logout')
 def logout():

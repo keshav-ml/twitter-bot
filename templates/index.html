@@ -24,10 +24,10 @@
 	function toggle_but(){
 		if(window.but.innerHTML=='Start'){
 			
-			window.location = "{{url_for('activate_bot')}}";
+			window.location = "/index/activate";
 		}else{
 			
-			window.location = "{{url_for('deactivate_bot')}}";
+			window.location = "/index/deactivate";
 		}
 	}
 		

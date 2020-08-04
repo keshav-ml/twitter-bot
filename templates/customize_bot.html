@@ -3,6 +3,7 @@
 {% block scripts %}
 <script type="text/javascript">
 	var tot_rows = -1;
+	var tot_tweet = -1;
 	function myFunction(imgs) {
 	  // Get the expanded image
 	  var expandImg = document.getElementById("expandedImg");
@@ -43,18 +44,36 @@
 	  cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' placeholder='Enter answers here' style='width:100%;'>";
 	  
 	}
+	function create_tweet() {
+	  window.tot_tweet += 1
+	  var table = document.getElementById("tweet");
+	  var row = table.insertRow(window.tot_tweet);
+	  var cell1 = row.insertCell(0);
+	  cell1.innerHTML = "<input type='text' id='t"+window.tot_tweet+"' placeholder='Enter tweet here' style='width:100%;'>";
+	  
+	  
+	}
 
 	function delete_row() {
 	  document.getElementById("qna").deleteRow(window.tot_rows);
 	  window.tot_rows -= 1
 	}
+	function delete_tweet() {
+	  document.getElementById("tweet").deleteRow(window.tot_tweet);
+	  window.tot_tweet -= 1
+	}
 
-	function compile_qus(){
+	function compile_frm(){
 		var que_ans = {};
-		for (var i = 0; i <= window.tot_rows; i++) {
+		var tweets = [];
+ 		for (var i = 0; i <= window.tot_rows; i++) {
 			que_ans[document.getElementById('q'+i).value] = document.getElementById('a'+i).value
 		}
+		for (var i = 0; i<= window.tot_tweet;i++){
+			tweets.push(document.getElementById('t'+i).value)
+		}
 		document.getElementById("{{form.questions.id}}").value = JSON.stringify(que_ans);
+		document.getElementById("{{form.tweets.id}}").value = JSON.stringify(tweets);
 		
 	}
 </script>
@@ -65,7 +84,7 @@
 {% block content %}
 <div class="container-fluid ">
 <div style="float: left; width: 100%;" class="container-fluid ">
-<form action="" method="post" novalidate enctype="multipart/form-data" onsubmit="compile_qus();">
+<form action="" method="post" novalidate enctype="multipart/form-data" onsubmit="compile_frm();">
 <div class="card py-2" style="float: left; width: 30%;">
     <p class="h2" style="font-size: 30px;">Customize Bot</p>
     
@@ -92,6 +111,9 @@
         <p style="display: none;" >
         	{{ form.questions() }}
         </p>
+        <p style="display: none;" >
+        	{{ form.tweets() }}
+        </p>
         
         <p>{{ form.submit() }}</p>
     
@@ -107,6 +129,22 @@
 			<div style="height: 25px;" class="text-center">
 			<img onclick="delete_row()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;">
 			<img onclick="create_row()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;">
+
+			
+			</div>
+			
+			
+		</fieldset>
+    </div>
+    <div style="float: left; height: 100%; width: 60%;" class="card col py-2">
+    	<fieldset>
+    	<legend>Enter tweets</legend>
+	    	<table id="tweet" style="width: 100%;" cellpadding="10px">
+			</table>
+			
+			<div style="height: 25px;" class="text-center">
+			<img onclick="delete_tweet()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;">
+			<img onclick="create_tweet()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;">
 
 			
 			</div>
@@ -153,7 +191,9 @@
 </div>
 <script type="text/javascript">
     	var qna_field = document.getElementById('{{form.questions.id}}');
+    	var tweet_field = document.getElementById('{{form.tweets.id}}');
 		var table_widget = document.getElementById('qna');
+		var tweet_table = document.getElementById('tweet')
 		if (qna_field.value != ""){
 			qna_obj = JSON.parse(qna_field.value)
 			for(const key in qna_obj){
@@ -168,5 +208,20 @@
 			}
 			
 		}
+		if (tweet_field.value != ""){
+			twt_obj = JSON.parse(tweet_field.value)
+			for(const key in twt_obj){
+				window.tot_tweet += 1
+				var row = tweet_table.insertRow(window.tot_tweet);
+		  		var cell1 = row.insertCell(0);
+		  		
+		  		cell1.innerHTML = "<input type='text' id='t"+window.tot_tweet+"' value='"+twt_obj[key]+"' style='width:100%;'>";
+		  		
+				
+		  		
+			}
+			
+		}
+
     </script>
 {% endblock %}
