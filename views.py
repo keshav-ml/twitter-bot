@@ -114,29 +114,31 @@ def index(command=None):
 	bot_status = False
 	stop_eve = threading.Event()
 	main_th = threading.current_thread()
-	if command == 'activate':
-		bot = Bot(api=api,user = user,user_set = user_set)		
+	bot = Bot(api=api,user = user,user_set = user_set)		
+	if command == 'activate':		
 		logging.info("Thread created")
-		th = threading.Thread(name=usernm,target=bot.bot_start,args=(stop_eve,))
-		th.setDaemon(True) 
-		logging.info("Thread started")
-		th.start()
+		reply_th = threading.Thread(name = usernm+" reply_thread",target=bot.bot_reply, args=(stop_eve,))
+		mention_th = threading.Thread(name=usernm+' mention_thread',target=bot.bot_mention, args=(stop_eve,))
+		tweet_th = threading.Thread(name=usernm+' tweet_thread',target=bot.bot_tweet, args=(stop_eve,))
+		logging.info("Threads started")
+		tweet_th.start()
+		reply_th.start()
+		mention_th.start()
+		bot_status = True
 	elif command == 'deactivate':
 		logging.info("stopping thread")
 		for t in threading.enumerate():
 			print(t.getName())
 			if t is main_th:
 				continue
-			if t.getName() == usernm:
-				stop_eve.set()
-				logging.info("Thread stoped")
-	for t in threading.enumerate():
-		print(t.getName())
-		if t is main_th:
-			continue
-		if t.getName() == usernm:
-			if t.is_alive():
-				bot_status = True
+			if t.getName() in [usernm+" reply_thread", usernm+' mention_thread', usernm+' tweet_thread']:
+				print("hulla")
+				t.join(timeout=1)
+		
+		logging.info("Thread stoped")
+		for t in threading.enumerate():
+			print(t.getName())
+	
 
 	return render_template('index.html',user_obj=user_obj,bot_status=bot_status)
 
