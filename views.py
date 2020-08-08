@@ -22,7 +22,7 @@ logging.basicConfig(format=format, level=logging.INFO,
 def login():
 
 	if current_user.is_authenticated:
-		return redirect(url_for('index'))
+		return redirect(url_for('customize_bot'))
 	form = LoginForm()
 	if form.validate_on_submit():
 		user = User.query.filter_by(username=form.username.data).first()
@@ -111,33 +111,33 @@ def index(command=None):
 
 	api = tweepy.API(auth)
 	user_obj = api.me()
-	bot_status = False
 	stop_eve = threading.Event()
 	main_th = threading.current_thread()
-	bot = Bot(api=api,user = user,user_set = user_set)		
+	bot_status = False
+	for t in threading.enumerate():
+		if t is main_th:
+			continue
+		elif t.getName()  == "bot":
+			bot_status = True
+
 	if command == 'activate':		
-		logging.info("Thread created")
-		reply_th = threading.Thread(name = usernm+" reply_thread",target=bot.bot_reply, args=(stop_eve,))
-		mention_th = threading.Thread(name=usernm+' mention_thread',target=bot.bot_mention, args=(stop_eve,))
-		tweet_th = threading.Thread(name=usernm+' tweet_thread',target=bot.bot_tweet, args=(stop_eve,))
-		logging.info("Threads started")
-		tweet_th.start()
-		reply_th.start()
-		mention_th.start()
 		bot_status = True
+		logging.info("Thread created")
+		bot = Bot(name="bot",api=api,uid = user.id,user_set = user_set)		
+		bot.start()
+		logging.info("Threads started")
+		db.session.commit()
+
 	elif command == 'deactivate':
+		bot_status = False
 		logging.info("stopping thread")
+		logging.info("Thread stoped")
 		for t in threading.enumerate():
 			print(t.getName())
 			if t is main_th:
 				continue
-			if t.getName() in [usernm+" reply_thread", usernm+' mention_thread', usernm+' tweet_thread']:
-				print("hulla")
-				t.join(timeout=1)
-		
-		logging.info("Thread stoped")
-		for t in threading.enumerate():
-			print(t.getName())
+			elif t.getName()  == "bot":
+				t.raise_exception()
 	
 
 	return render_template('index.html',user_obj=user_obj,bot_status=bot_status)

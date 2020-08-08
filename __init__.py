@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, backref
 from flask_login import UserMixin
 from flask_login import LoginManager
+from chatterbot import ChatBot
+from chatterbot.trainers import ChatterBotCorpusTrainer
 from werkzeug.security import generate_password_hash, check_password_hash
 
 Base = declarative_base()
@@ -17,6 +19,17 @@ api_key = "kxNP9B8P5PoqTddS9bKkhQADd"
 api_sec_key = "Asv6TgPPc5ONl6saKm8aAz9aIC4sKoVCEeJvBbUFUZKXTMlVbM"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat_bot.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+twitter_bot = ChatBot("Chatterbot", storage_adapter="chatterbot.storage.SQLStorageAdapter",
+	logic_adapters=[
+        'chatterbot.logic.MathematicalEvaluation',
+        'chatterbot.logic.TimeLogicAdapter',
+        'chatterbot.logic.BestMatch'
+    ],
+    database_uri=app.config['SQLALCHEMY_DATABASE_URI'])
+trainer = ChatterBotCorpusTrainer(twitter_bot)
+trainer.train("chatterbot.corpus.english")
+
 db = SQLAlchemy(app)
 
 
@@ -68,7 +81,7 @@ class User_settings(db.Model):
 	questions = db.Column(db.String(),nullable=True)
 	tweets = db.Column(db.String(),nullable=True)
 
-	def __init__(self, user_id,DM_reply_time,tweet_time,names,questions,tweets):
+	def __init__(self, user_id, DM_reply_time,tweet_time,names,questions,tweets):
 		self.user_id = user_id
 		self.DM_reply_time = DM_reply_time
 		self.tweet_time = tweet_time
