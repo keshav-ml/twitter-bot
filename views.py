@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
+from filetype import guess
 import logging
 from bot import Bot
 
@@ -68,17 +69,23 @@ def customize_bot():
 	api = tweepy.API(auth)
 	user_obj = api.me()
 	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'
+	path_to_img = app.config['UPLOAD_PATH']+str(user.id)+'/img/'
+	path_to_vid = app.config['UPLOAD_PATH']+str(user.id)+'/vid/'
 	if not os.path.exists(path_to_media):
 		os.makedirs(path_to_media)
-	f_names = [path_to_media+f for f in os.listdir(path_to_media)]
-
+		os.makedirs(path_to_img)
+		os.makedirs(path_to_vid)
+	f_names = [path_to_img+secure_filename(f) for f in os.listdir(path_to_img)]
+	f_names.extend([path_to_vid+secure_filename(f) for f in os.listdir(path_to_vid)])
 	usr_settings = User_settings.query.filter_by(user_id=user.id)
 	if usr_settings.first():	
 		form = CustomizeForm(obj=usr_settings.first().to_obj())
 	else:
 		form = CustomizeForm()
 	if form.validate_on_submit():
+
 		ids = " ".join(form.names.data.strip().split(' '))
+
 		if usr_settings.first():
 			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data,tweets=form.tweets.data))
 		else:
@@ -87,13 +94,21 @@ def customize_bot():
 		db.session.commit()
 
 		files = form.files.data
+		
 		if files[0].filename != "":
 			for file in files:
-				print(file)
-
+				f_type = guess(file)
 				files_filenames = secure_filename(file.filename)
-				print(files_filenames)
-				file.save(os.path.join(path_to_media, files_filenames))
+				if f_type.mime.split('/')[0] == 'image':
+					file.save(os.path.join(path_to_img, files_filenames))
+					f_names.append(os.path.join(path_to_img, files_filenames))
+				elif f_type.mime.split('/')[0] == 'video':
+					file.save(os.path.join(path_to_vid, files_filenames))
+					f_names.append(os.path.join(path_to_vid, files_filenames))
+
+
+				
+				
 			
 		
 		return redirect(url_for('index'))
@@ -105,10 +120,16 @@ def customize_bot():
 def index(command=None):
 	usernm = current_user.username
 	user = User.query.filter_by(username=usernm).first()
-	user_set = User_settings.query.filter_by(user_id=user.id).first()
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
 	auth.set_access_token(user.acc_token,user.acc_secret)
-
+	filename  = app.config['UPLOAD_PATH']+str(user.id)+'/ls_seen/'
+	if not os.path.exists(filename):
+		os.makedirs(filename)
+		file = open(filename+'last_seen.txt','w')
+		file.close()
+		file2 = open(filename+'msg_seen.txt','w')
+		file2.close()
+	
 	api = tweepy.API(auth)
 	user_obj = api.me()
 	stop_eve = threading.Event()
@@ -117,13 +138,13 @@ def index(command=None):
 	for t in threading.enumerate():
 		if t is main_th:
 			continue
-		elif t.getName()  == "bot":
+		elif t.getName()  == usernm:
 			bot_status = True
 
 	if command == 'activate':		
 		bot_status = True
 		logging.info("Thread created")
-		bot = Bot(name="bot",api=api,uid = user.id,user_set = user_set)		
+		bot = Bot(name=usernm,api=api,uid = user.id)		
 		bot.start()
 		logging.info("Threads started")
 		db.session.commit()
@@ -136,7 +157,7 @@ def index(command=None):
 			print(t.getName())
 			if t is main_th:
 				continue
-			elif t.getName()  == "bot":
+			elif t.getName()  == usernm:
 				t.raise_exception()
 	
 
@@ -147,16 +168,16 @@ def logout():
     logout_user()
     return redirect(url_for('customize_bot'))
 
-@app.route('/media/<user_id>/<name>',methods=['GET','POST'])
-def files(user_id,name):
-	return send_file(app.config['UPLOAD_PATH']+user_id+'/'+name)
+@app.route('/media/<user_id>/<f_type>/<name>',methods=['GET','POST'])
+def files(user_id,f_type,name):
+	return send_file(app.config['UPLOAD_PATH']+user_id+'/'+f_type+'/'+name)
 
-@app.route('/media/<user_id>/<name>/delete',methods=['GET','POST'])
-def delete_file(user_id,name):
+@app.route('/media/<user_id>/<f_type>/<name>/delete',methods=['GET','POST'])
+def delete_file(user_id,f_type,name):
 	filename = secure_filename(name)
 	usernm = current_user.username
 	user = User.query.filter_by(username=usernm).first()
-	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'
+	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'+f_type+'/'
 	path = os.path.join(path_to_media,filename)
 	os.remove(path)
 	flash("Image deleted")

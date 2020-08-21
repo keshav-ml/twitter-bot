@@ -2,9 +2,11 @@ import tweepy
 import time
 import random
 import json
+from __init__ import app
 import threading
-from __init__ import db, User_settings, twitter_bot, User
+from __init__ import db, User_settings, User
 import logging
+import textdistance as td
 import os
 import ctypes
 
@@ -14,11 +16,10 @@ logging.basicConfig(format=format, level=logging.INFO,
 
 class Bot(threading.Thread):
         
-	def __init__(self, name,api,uid,user_set):
+	def __init__(self, name,api,uid):
 		threading.Thread.__init__(self,name=name) 
 		self.api = api
 		self.uid = uid
-		self.user_set = user_set
 		
 	def run(self):
 		try:
@@ -39,29 +40,86 @@ class Bot(threading.Thread):
 
 		
 	def bot_reply(self):
-		mentions = self.api.list_direct_messages()
-		files = ['media/'+str(self.uid)+'/'+v for v in os.listdir('media/'+str(self.uid)+'/')]
-		rand_file = random.randint(0,len(files)-1)
-		message = {}
-		for mention in mentions:
-			if mention.message_create['sender_id'] not in message:
-				message[mention.message_create['sender_id']] = mention.message_create["message_data"]['text']
-		for sender_id, msg in message.items():
+		user_set = User_settings.query.filter_by(user_id=self.uid).first()
+		dms = self.api.list_direct_messages()
+		files = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
+		rd_file = random.randint(0,len(files)-1)
+		qna = json.loads(user_set.questions)
+		msg_path = app.config['UPLOAD_PATH']+str(self.uid)+"/ls_seen/msg_seen.txt"
+		prev_msg = self.get_msg(msg_path)		
+		print(prev_msg)
+		new_msg = {}
+		for dm in dms:
+			if dm.message_create['sender_id'] != self.api.me().id_str:
+				if dm.message_create['sender_id'] not in prev_msg.keys():
+					prev_msg[dm.message_create['sender_id']] = {}
+					prev_msg[dm.message_create['sender_id']][dm.created_timestamp] = dm.message_create['message_data']['text']
+				else:
+					if dm.created_timestamp not in prev_msg[dm.message_create['sender_id']].keys():
+						new_msg[dm.message_create['sender_id']] = dm.message_create["message_data"]['text']
+						prev_msg[dm.message_create['sender_id']][dm.created_timestamp] = dm.message_create["message_data"]['text']
+		for sender_id, msg in new_msg.items():
+			sent = False
 			if any([True if v in msg.lower().split(' ') else False for v in ['pic','picture','image','sample']]):
-				med = self.api.media_upload(filename  = files[rand_file])
+				med = self.api.media_upload(filename  = files[rd_file])
 				self.api.send_direct_message(sender_id, text="Here's the sample image...",attachment_type='media', attachment_media_id=med.media_id)
+				sent = True
 			else:
-				self.api.send_direct_message(sender_id,text=twitter_bot.get_response(msg).text)
-		time.sleep(10)
+				for que,ans in qna.items():
+					if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
+						self.api.send_direct_message(sender_id,text=ans)
+						sent = True
+			if not sent:
+				self.api.send_direct_message(sender_id,text="Hello! thank you for messaging, Im busy will get back to you after 5 mins.")
+		self.store_msg(json.dumps(prev_msg),msg_path)
+		time.sleep(int(user_set.DM_reply_time))
+
+
 
 	def bot_mention(self):
-		pass
+		filename  = app.config['UPLOAD_PATH']+str(self.uid)+'/ls_seen/last_seen.txt'
+		mentions = reversed(self.api.mentions_timeline(self.get_last_seen(filename)))
+		for mention in mentions:
+			last_id = mention.id
+			self.store_last_seen(last_id,filename)
+			self.api.update_status("@"+str(mention.user.screen_name)+" DM me for more content",mention.id)
+			logging.info("Commented to "+str(mention.user.screen_name))
+		time.sleep(30)
+
+	def store_last_seen(self,last_id,filename):
+		with open(filename,'w') as f:
+			f.write(str(last_id))
+		return
+
+	def get_last_seen(self,filename):
+		with open(filename,'r') as f:
+			try:
+				last_id = int(f.read().strip())
+			except:
+				last_id = None
+		return last_id
+
+
+	def store_msg(self,json_str,filename):
+		with open(filename,'w') as f:
+			f.write(json_str)
+		return
+
+	def get_msg(self,filename):
+		with open(filename,'r') as f:
+			try:
+				last_id = json.loads(f.read().strip())
+			except:
+				last_id = {}
+		return last_id
+
 
 	def bot_tweet(self):
 		logging.info("tweet thread running")		
-		tweets = json.loads(self.user_set.tweets)
+		user_set = User_settings.query.filter_by(user_id=self.uid).first()
+		tweets = json.loads(user_set.tweets)
 		rand_int = random.randint(0,len(tweets)-1)
-		files = ['media/'+str(self.uid)+'/'+v for v in os.listdir('media/'+str(self.uid)+'/')]
+		files = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
 		rand_file = random.randint(0,len(files)-1)
 		if random.randint(0,10) % 2 == 0:
 			med = self.api.media_upload(filename  = files[rand_file])
@@ -70,7 +128,7 @@ class Bot(threading.Thread):
 		else:
 			#self.api.update_status(tweets[rand_int])
 			logging.info("tweeted without media")
-		time.sleep(self.user_set.tweet_time)
+		time.sleep(int(user_set.tweet_time))
 		logging.info("tweet thread destroyed")
 
 	def get_id(self):
