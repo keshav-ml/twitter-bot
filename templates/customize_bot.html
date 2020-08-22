@@ -85,44 +85,54 @@
 <div class="container-fluid ">
 <div style="float: left; width: 100%;" class="container-fluid ">
 <form action="" method="post" novalidate enctype="multipart/form-data" onsubmit="compile_frm();">
-<div class="card py-2" style="float: left; width: 30%;">
+<div class="py-2" style="float: left; width: 100%;">
     <p class="h2" style="font-size: 30px;">Customize Bot</p>
-    
+    	
         {{ form.hidden_tag() }}
-        <p>
-            {{ form.DM_reply_time.label }}
-            <small>(in minutes)</small>
-            {{ form.DM_reply_time() }}
-        </p>
-        <p>
-            {{ form.tweet_time.label }}
-            {{ form.tweet_time() }}
-        </p>
-        <p>
-            {{ form.names.label }}<br>
-            <small>(Enter names seperated by space)</small><br>
-            {{ form.names() }}
-        </p>
-        <p>
-            {{ form.files.label }}<br>
-
-            {{ form.files() }}
-        </p>
+        <table cellspacing="10" cellpadding="20">
+        	<tr>
+        		<td>
+        			{{ form.DM_reply_time.label }}
+		            <small>(in minutes)</small>
+		            {{ form.DM_reply_time() }}
+		        </td>
+		        <td style="text-align: left;">
+		    		{{ form.tweet_time.label }}
+            		{{ form.tweet_time() }}    	
+		        </td>
+        	</tr>
+        	<tr>
+        		<td style="text-align: left;">
+        			{{ form.names.label }}<br>
+		            <small>(Enter names seperated by space)</small><br>
+		            
+        		</td>
+        		<td style="text-align: left;">
+        			{{ form.names() }}		
+        		</td>
+        	</tr>
+        	<tr>
+        		<td  style="text-align: left;">
+        			{{ form.files.label }}
+        		</td>
+        		<td style="text-align: left;">
+					{{ form.files() }}        			
+        		</td>
+        	</tr>
+        </table>
         <p style="display: none;" >
         	{{ form.questions() }}
         </p>
         <p style="display: none;" >
         	{{ form.tweets() }}
         </p>
-        
-        <p>{{ form.submit() }}</p>
     
 
     </div>
-    </form>
-    <div style="float: left; height: 100%; width: 60%;" class="card col py-2">
+    
+    <div style="float: left; height: 100%; width: 100%;" class="py-2">
     	<fieldset>
-    	<legend>Questions</legend>
+    	<p class="h2" style="font-size: 30px;">Questions</p> 
 	    	<table id="qna" style="width: 100%;" cellpadding="10px">
 			</table>
 			
@@ -136,9 +146,9 @@
 			
 		</fieldset>
     </div>
-    <div style="float: left; height: 100%; width: 60%;" class="card col py-2">
+    <div style="float: left; height: 100%; width: 100%;" class="py-2">
     	<fieldset>
-    	<legend>Enter tweets</legend>
+    	<p class="h2" style="font-size: 30px;">Enter tweets</p>
 	    	<table id="tweet" style="width: 100%;" cellpadding="10px">
 			</table>
 			
@@ -152,11 +162,15 @@
 			
 		</fieldset>
     </div>
-    
+    <div style="float: right; margin-top: 50px; margin-bottom: 50px;">
+    <button type="Submit" class="btn btn-primary" >Save Settings</button>
+    </div>
+    </form>
 </div>
      <div style="float: left; width: 100%;">
     	<h1 align="center">Uploaded Images</h1>
-    	<div class='gallery'>
+    	<br>
+    	<div class='card'>
     		<div class="row">
     		{% if files %}
     			{% for file in files %}

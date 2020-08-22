@@ -75,8 +75,8 @@ def customize_bot():
 		os.makedirs(path_to_media)
 		os.makedirs(path_to_img)
 		os.makedirs(path_to_vid)
-	f_names = [path_to_img+secure_filename(f) for f in os.listdir(path_to_img)]
-	f_names.extend([path_to_vid+secure_filename(f) for f in os.listdir(path_to_vid)])
+	f_names = [path_to_img+f for f in os.listdir(path_to_img)]
+	f_names.extend([path_to_vid+f for f in os.listdir(path_to_vid)])
 	usr_settings = User_settings.query.filter_by(user_id=user.id)
 	if usr_settings.first():	
 		form = CustomizeForm(obj=usr_settings.first().to_obj())
@@ -101,10 +101,10 @@ def customize_bot():
 				files_filenames = secure_filename(file.filename)
 				if f_type.mime.split('/')[0] == 'image':
 					file.save(os.path.join(path_to_img, files_filenames))
-					f_names.append(os.path.join(path_to_img, files_filenames))
+					f_names.append(os.path.join(path_to_img, file.filename))
 				elif f_type.mime.split('/')[0] == 'video':
 					file.save(os.path.join(path_to_vid, files_filenames))
-					f_names.append(os.path.join(path_to_vid, files_filenames))
+					f_names.append(os.path.join(path_to_vid, file.filename))
 
 
 				

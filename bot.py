@@ -43,6 +43,7 @@ class Bot(threading.Thread):
 		user_set = User_settings.query.filter_by(user_id=self.uid).first()
 		dms = self.api.list_direct_messages()
 		files = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
+		#files.extend(['media/'+str(self.uid)+'/vid/'+v for v in os.listdir('media/'+str(self.uid)+'/vid/')])
 		rd_file = random.randint(0,len(files)-1)
 		qna = json.loads(user_set.questions)
 		msg_path = app.config['UPLOAD_PATH']+str(self.uid)+"/ls_seen/msg_seen.txt"
