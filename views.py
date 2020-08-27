@@ -102,15 +102,14 @@ def customize_bot():
 			for file in files:
 				files_filenames = secure_filename(file.filename)
 				if any([files_filenames.lower().endswith(k) for k in ['png','jpg','jpeg']]):
-					print("saved :- ",path_to_img+files_filenames)
 					file.save(os.path.join(path_to_img, files_filenames))	
 				elif any([files_filenames.lower().endswith(k) for k in ['mkv','mp4','gif','webm','mov']]):
-					print("saved :- ",path_to_vid+files_filenames)
 					file.save(os.path.join(path_to_vid, files_filenames))
 		
 		return redirect(url_for('index'))
 	return render_template('customize_bot.html',form=form,usernm=usernm,settings = usr_settings.first(),img_files = i_names, vid_files = v_names, user_obj = user_obj)
 
+@app.route('/index/')
 @app.route('/index')
 @app.route('/index/<command>')
 @login_required
@@ -149,22 +148,22 @@ def index(command=None):
 
 	if command == 'activate':		
 		bot_status = True
-		logging.info("Thread created")
 		bot = Bot(name=usernm,api=api,uid = user.id)		
 		bot.start()
-		logging.info("Threads started")
+		logging.info("Bot started")
 		db.session.commit()
 
 	elif command == 'deactivate':
 		bot_status = False
-		logging.info("stopping thread")
-		logging.info("Thread stoped")
+		logging.info("stopping Bot")
 		for t in threading.enumerate():
-			print(t.getName())
 			if t is main_th:
 				continue
 			elif t.getName()  == usernm:
 				t.raise_exception()
+		for t in threading.enumerate():
+			print(t.getName())
+			
 	
 
 	logs = []

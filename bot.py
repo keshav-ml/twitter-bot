@@ -30,19 +30,23 @@ class Bot(threading.Thread):
 	def run(self):
 		try:
 			while True:
-				reply = threading.Thread(target=self.bot_reply)
+				reply = threading.Thread(name=self.name+" reply", target=self.bot_reply)
 				reply.start()
-				mention = threading.Thread(target=self.bot_mention)
+				mention = threading.Thread(name=self.name+" mention",target=self.bot_mention)
 				mention.start()
-				tweet = threading.Thread(target=self.bot_tweet)
+				tweet = threading.Thread(name=self.name+" tweet",target=self.bot_tweet)
 				tweet.start()
 				time.sleep(15)
 				if mention.is_alive():
 					mention.join()
 				if reply.is_alive():
 					reply.join()
+				if tweet.is_alive():
+					tweet.join()
 		finally:
-			logging.info("sub threads stopped")
+			logging.info("Bot stopped")
+			for t in threading.enumerate():
+				print(t.getName())
 
 		
 	def bot_reply(self):
@@ -76,7 +80,8 @@ class Bot(threading.Thread):
 		for sender_id, msg in new_msg.items():
 			try:
 				block_ids = [self.api.get_user(sr_nm).id_str for sr_nm in user_set.block_names]
-			except:
+			except Exception as e:
+				print(e)
 				block_ids = []
 			try:
 				sub_ids = [self.api.get_user(sr_nm).id_str for sr_nm in user_set.sub_names]
@@ -105,6 +110,7 @@ class Bot(threading.Thread):
 								sent = True
 				if not sent:
 					self.api.send_direct_message(sender_id,text="Hello! thank you for messaging, Im busy will get back to you after 5 mins.")
+				logging.info("Replied to DM :- "+self.api.get_user(sender_id).screen_name)
 		self.store_msg(json.dumps(prev_msg),msg_path)
 		time.sleep(int(user_set.DM_reply_time))
 
@@ -116,7 +122,7 @@ class Bot(threading.Thread):
 		for mention in mentions:
 			last_id = mention.id
 			self.store_last_seen(last_id,filename)
-			self.api.update_status("@"+str(mention.user.screen_name)+" DM me for more content",mention.id)
+			#self.api.update_status("@"+str(mention.user.screen_name)+" DM me for more content",mention.id)
 			logging.info("Commented to "+str(mention.user.screen_name))
 		time.sleep(30)
 
@@ -152,6 +158,9 @@ class Bot(threading.Thread):
 		logging.info("tweet thread running")		
 		user_set = User_settings.query.filter_by(user_id=self.uid).first()
 		tweets = json.loads(user_set.tweets)
+		if len(tweets) == 0:
+			logging.info("No tweet found in settings skipping tweet")
+			return 
 		rand_int = random.randint(0,len(tweets)-1)
 		files = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
 		rand_file = random.randint(0,len(files)-1)
@@ -162,8 +171,9 @@ class Bot(threading.Thread):
 		else:
 			#self.api.update_status(tweets[rand_int])
 			logging.info("tweeted without media")
+		print(user_set.tweet_time)
 		time.sleep(int(user_set.tweet_time))
-		logging.info("tweet thread destroyed")
+		
 
 	def get_id(self):
 		if hasattr(self, '_thread_id'):

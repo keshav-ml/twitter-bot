@@ -2,9 +2,13 @@
 
 
 {% block scripts %}
-{% if bot_status %}
-<meta http-equiv="refresh" content="5">
-{% endif %}
+
+<script type="text/javascript">
+  {% if bot_status %}
+  window.setTimeout(function(){window.location.replace("/index");},10000)
+  {% endif %}
+</script>
+
 {% endblock %}
 
 
@@ -26,7 +30,7 @@
   <div class="my-3 p-3 bg-white rounded box-shadow">
     <h6 class="border-bottom border-gray pb-2 mb-0">Bot Logs</h6>
 
-    <div style="background-color: #d2d2d25c;
+    <div id='logs_disp' style="background-color: #d2d2d25c;
     margin-top: 25px;
     color: maroon;
     height: 200px;
@@ -57,6 +61,8 @@
 </div>
 
 <script type="text/javascript">
+  var objDiv = document.getElementById("logs_disp");
+  objDiv.scrollTop = objDiv.scrollHeight;
 	var but = document.getElementById("tog_but");
 	{% if bot_status %}	
 		window.but.innerHTML = "Stop"
