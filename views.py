@@ -75,8 +75,10 @@ def customize_bot():
 		os.makedirs(path_to_media)
 		os.makedirs(path_to_img)
 		os.makedirs(path_to_vid)
-	f_names = [path_to_img+f for f in os.listdir(path_to_img)]
-	f_names.extend([path_to_vid+f for f in os.listdir(path_to_vid)])
+		f = open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','w')
+		f.close()
+	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
+	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
 	usr_settings = User_settings.query.filter_by(user_id=user.id)
 	if usr_settings.first():	
 		form = CustomizeForm(obj=usr_settings.first().to_obj())
@@ -84,12 +86,13 @@ def customize_bot():
 		form = CustomizeForm()
 	if form.validate_on_submit():
 
-		ids = " ".join(form.names.data.strip().split(' '))
+		block_ids = " ".join(form.block_names.data.strip().split(' '))
+		sub_ids = " ".join(form.sub_names.data.strip().split(' '))
 
 		if usr_settings.first():
-			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data,tweets=form.tweets.data))
+			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data,tweets=form.tweets.data))
 		else:
-			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,names=ids,questions=form.questions.data,tweets=form.tweets.data)
+			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data,tweets=form.tweets.data)
 			db.session.add(new_settings)
 		db.session.commit()
 
@@ -97,22 +100,16 @@ def customize_bot():
 		
 		if files[0].filename != "":
 			for file in files:
-				f_type = guess(file)
 				files_filenames = secure_filename(file.filename)
-				if f_type.mime.split('/')[0] == 'image':
-					file.save(os.path.join(path_to_img, files_filenames))
-					f_names.append(os.path.join(path_to_img, file.filename))
-				elif f_type.mime.split('/')[0] == 'video':
+				if any([files_filenames.lower().endswith(k) for k in ['png','jpg','jpeg']]):
+					print("saved :- ",path_to_img+files_filenames)
+					file.save(os.path.join(path_to_img, files_filenames))	
+				elif any([files_filenames.lower().endswith(k) for k in ['mkv','mp4','gif','webm','mov']]):
+					print("saved :- ",path_to_vid+files_filenames)
 					file.save(os.path.join(path_to_vid, files_filenames))
-					f_names.append(os.path.join(path_to_vid, file.filename))
-
-
-				
-				
-			
 		
 		return redirect(url_for('index'))
-	return render_template('customize_bot.html',form=form,usernm=usernm,settings = usr_settings.first(),files = f_names,user_obj = user_obj)
+	return render_template('customize_bot.html',form=form,usernm=usernm,settings = usr_settings.first(),img_files = i_names, vid_files = v_names, user_obj = user_obj)
 
 @app.route('/index')
 @app.route('/index/<command>')
@@ -122,6 +119,15 @@ def index(command=None):
 	user = User.query.filter_by(username=usernm).first()
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
 	auth.set_access_token(user.acc_token,user.acc_secret)
+
+	filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log', 'a')
+	log = logging.getLogger()
+	for hdlr in log.handlers[:]:
+		if isinstance(hdlr,logging.FileHandler):
+			log.removeHandler(hdlr)
+	log.addHandler(filehandler) 
+
+	
 	filename  = app.config['UPLOAD_PATH']+str(user.id)+'/ls_seen/'
 	if not os.path.exists(filename):
 		os.makedirs(filename)
@@ -161,7 +167,11 @@ def index(command=None):
 				t.raise_exception()
 	
 
-	return render_template('index.html',user_obj=user_obj,bot_status=bot_status)
+	logs = []
+	with open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','r') as f:
+		for line in f.readlines():
+			logs.append(line)
+	return render_template('index.html',user_obj=user_obj,bot_status=bot_status,logs = logs)
 
 @app.route('/logout')
 def logout():
@@ -182,3 +192,13 @@ def delete_file(user_id,f_type,name):
 	os.remove(path)
 	flash("Image deleted")
 	return redirect(url_for('customize_bot'))
+
+
+
+@app.route('/logs/clear',methods=['GET','POST'])
+def log_clear():
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	with open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','w') as f:
+		f.truncate()
+	return redirect(url_for('index'))

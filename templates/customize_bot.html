@@ -2,7 +2,12 @@
 
 {% block scripts %}
 <script type="text/javascript">
-	var tot_rows = -1;
+
+	
+	
+	
+	var tot_sub_rows = -1;
+	var tot_unsub_rows = -1;
 	var tot_tweet = -1;
 	function myFunction(imgs) {
 	  // Get the expanded image
@@ -34,14 +39,23 @@
 
 		
 	}
-	function create_row() {
-	  window.tot_rows += 1
-	  var table = document.getElementById("qna");
-	  var row = table.insertRow(window.tot_rows);
-	  var cell1 = row.insertCell(0);
-	  var cell2 = row.insertCell(1);
-	  cell1.innerHTML = "<input type='text' id='q"+window.tot_rows+"' placeholder='Enter questions here' style='width:100%;'>";
-	  cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' placeholder='Enter answers here' style='width:100%;'>";
+	function create_row(id_str) {
+		var table = document.getElementById(id_str);
+		if( id_str == "qna_sub"){
+			window.tot_sub_rows += 1		
+			var row = table.insertRow(window.tot_sub_rows);
+			var cell1 = row.insertCell(0);
+		  var cell2 = row.insertCell(1);
+		  cell1.innerHTML = "<input type='text' id='"+id_str+"_q"+window.tot_sub_rows+"' placeholder='Enter User query' style='width:100%;'>";
+		  cell2.innerHTML = "<input type='text' id='"+id_str+"_a"+window.tot_sub_rows+"' placeholder='Enter bots reply' style='width:100%;'>";
+		} else{
+			window.tot_unsub_rows += 1
+			var row = table.insertRow(window.tot_unsub_rows);
+			var cell1 = row.insertCell(0);
+		  var cell2 = row.insertCell(1);
+		  cell1.innerHTML = "<input type='text' id='"+id_str+"_q"+window.tot_unsub_rows+"' placeholder='Enter User query' style='width:100%;'>";
+		  cell2.innerHTML = "<input type='text' id='"+id_str+"_a"+window.tot_unsub_rows+"' placeholder='Enter bots reply' style='width:100%;'>";
+		}
 	  
 	}
 	function create_tweet() {
@@ -54,9 +68,15 @@
 	  
 	}
 
-	function delete_row() {
-	  document.getElementById("qna").deleteRow(window.tot_rows);
-	  window.tot_rows -= 1
+	function delete_row(id_str) {
+	  
+	  if( id_str == "qna_sub"){
+	  		document.getElementById(id_str).deleteRow(window.tot_sub_rows);
+			window.tot_sub_rows -= 1		
+		} else{
+			document.getElementById(id_str).deleteRow(window.tot_unsub_rows);
+			window.tot_unsub_rows -= 1
+		}
 	}
 	function delete_tweet() {
 	  document.getElementById("tweet").deleteRow(window.tot_tweet);
@@ -64,15 +84,20 @@
 	}
 
 	function compile_frm(){
-		var que_ans = {};
+		var que_ans_sub = {};
+		var que_ans_unsub = {};
 		var tweets = [];
- 		for (var i = 0; i <= window.tot_rows; i++) {
-			que_ans[document.getElementById('q'+i).value] = document.getElementById('a'+i).value
+ 		for (var i = 0; i <= window.tot_sub_rows; i++) {
+			que_ans_sub[document.getElementById('qna_sub_q'+i).value] = document.getElementById('qna_sub_a'+i).value
+		}
+		for (var i = 0; i <= window.tot_unsub_rows; i++) {
+			que_ans_unsub[document.getElementById('qna_unsub_q'+i).value] = document.getElementById('qna_unsub_a'+i).value
 		}
 		for (var i = 0; i<= window.tot_tweet;i++){
 			tweets.push(document.getElementById('t'+i).value)
 		}
-		document.getElementById("{{form.questions.id}}").value = JSON.stringify(que_ans);
+		document.getElementById("{{form.questions_sub.id}}").value = JSON.stringify(que_ans_sub);
+		document.getElementById("{{form.questions_unsub.id}}").value = JSON.stringify(que_ans_unsub);
 		document.getElementById("{{form.tweets.id}}").value = JSON.stringify(tweets);
 		
 	}
@@ -103,12 +128,22 @@
         	</tr>
         	<tr>
         		<td style="text-align: left;">
-        			{{ form.names.label }}<br>
+        			{{ form.block_names.label }}<br>
 		            <small>(Enter names seperated by space)</small><br>
 		            
         		</td>
         		<td style="text-align: left;">
-        			{{ form.names() }}		
+        			{{ form.block_names() }}		
+        		</td>
+        	</tr>
+        	<tr>
+        		<td style="text-align: left;">
+        			{{ form.sub_names.label }}<br>
+		            <small>(Enter names seperated by space)</small><br>
+		            
+        		</td>
+        		<td style="text-align: left;">
+        			{{ form.sub_names() }}		
         		</td>
         	</tr>
         	<tr>
@@ -121,7 +156,10 @@
         	</tr>
         </table>
         <p style="display: none;" >
-        	{{ form.questions() }}
+        	{{ form.questions_sub() }}
+        </p>
+        <p style="display: none;" >
+        	{{ form.questions_unsub() }}
         </p>
         <p style="display: none;" >
         	{{ form.tweets() }}
@@ -132,13 +170,29 @@
     
     <div style="float: left; height: 100%; width: 100%;" class="py-2">
     	<fieldset>
-    	<p class="h2" style="font-size: 30px;">Questions</p> 
-	    	<table id="qna" style="width: 100%;" cellpadding="10px">
+    	<p class="h2" style="font-size: 30px;">Replies for Subscribed users</p> 
+	    	<table id="qna_sub" style="width: 100%;" cellpadding="10px">
 			</table>
 			
 			<div style="height: 25px;" class="text-center">
-			<img onclick="delete_row()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;">
-			<img onclick="create_row()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;">
+			<img onclick="delete_row('qna_sub')" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;height: 25px; width: 25px">
+			<img onclick="create_row('qna_sub')" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;height: 25px; width: 25px;">
+
+			
+			</div>
+			
+			
+		</fieldset>
+    </div>
+    <div style="float: left; height: 100%; width: 100%;" class="py-2">
+    	<fieldset>
+    	<p class="h2" style="font-size: 30px;">Replies for Unsubscribed users</p> 
+	    	<table id="qna_unsub" style="width: 100%;" cellpadding="10px">
+			</table>
+			
+			<div style="height: 25px;" class="text-center">
+			<img onclick="delete_row('qna_unsub')" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;height: 25px; width: 25px">
+			<img onclick="create_row('qna_unsub')" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;height: 25px; width: 25px;">
 
 			
 			</div>
@@ -153,8 +207,8 @@
 			</table>
 			
 			<div style="height: 25px;" class="text-center">
-			<img onclick="delete_tweet()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;">
-			<img onclick="create_tweet()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;">
+			<img onclick="delete_tweet()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right; height: 25px; width: 25px;">
+			<img onclick="create_tweet()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;height: 25px; width: 25px;">
 
 			
 			</div>
@@ -172,8 +226,8 @@
     	<br>
     	<div class='card'>
     		<div class="row">
-    		{% if files %}
-    			{% for file in files %}
+    		{% if img_files %}
+    			{% for file in img_files %}
     				<div class="column">
 					    <img src="{{file}}" alt="{{file.split('/')[-1]}}" onclick="myFunction(this);">
 					</div>
@@ -193,7 +247,7 @@
 		  
 		  </div>
 		  <!-- Expanded image -->
-		  <img id="expandedImg" style="width:100%" class="dispclass">
+		  <img id="expandedImg" style="width:100%;height: 100%" class="dispclass">
 
 		  
 		  
@@ -202,21 +256,63 @@
 
 		</div>
 </div>
+
+
+
+
+<div style="float: left; width: 100%;">
+    	<h1 align="center">Uploaded Videos</h1>
+    	<br>
+    	<div class='card'>
+    		<div class="row">
+    		{% if vid_files %}
+    			{% for file in vid_files %}
+    				<div class="column">
+    					<div style="float: left;"><font>{{file.split('/')[-1]}}</font></div>
+					    <div style="float: left;"><video src="{{file}}" alt="{{file.split('/')[-1]}}" controls></div>
+					</div>
+    			{% endfor %}
+    		{% endif %}
+    		</div>
+
+		</div>
+</div>
+
+
+
+
 </div>
 <script type="text/javascript">
-    	var qna_field = document.getElementById('{{form.questions.id}}');
+    	var qna_sub_field = document.getElementById('{{form.questions_sub.id}}');
+    	var qna_unsub_field = document.getElementById('{{form.questions_unsub.id}}');
+
     	var tweet_field = document.getElementById('{{form.tweets.id}}');
-		var table_widget = document.getElementById('qna');
+		var table_sub_widget = document.getElementById('qna_sub');
+		var table_unsub_widget = document.getElementById('qna_unsub');
 		var tweet_table = document.getElementById('tweet')
-		if (qna_field.value != ""){
-			qna_obj = JSON.parse(qna_field.value)
+		if (qna_sub_field.value != ""){
+			qna_obj = JSON.parse(qna_sub_field.value)
 			for(const key in qna_obj){
-				window.tot_rows += 1
-				var row = table_widget.insertRow(window.tot_rows);
+				window.tot_sub_rows += 1
+				var row = table_sub_widget.insertRow(window.tot_sub_rows);
 		  		var cell1 = row.insertCell(0);
 		  		var cell2 = row.insertCell(1);
-		  		cell1.innerHTML = "<input type='text' id='q"+window.tot_rows+"' value='"+key+"' style='width:100%;'>";
-		  		cell2.innerHTML = "<input type='text' id='a"+window.tot_rows+"' value='"+qna_obj[key]+"' style='width:100%;'>";
+		  		cell1.innerHTML = "<input type='text' id='qna_sub_q"+window.tot_sub_rows+"' value='"+key+"' style='width:100%;'>";
+		  		cell2.innerHTML = "<input type='text' id='qna_sub_a"+window.tot_sub_rows+"' value='"+qna_obj[key]+"' style='width:100%;'>";
+				
+		  		
+			}
+			
+		}
+		if (qna_unsub_field.value != ""){
+			qna_obj = JSON.parse(qna_unsub_field.value)
+			for(const key in qna_obj){
+				window.tot_unsub_rows += 1
+				var row = table_unsub_widget.insertRow(window.tot_unsub_rows);
+		  		var cell1 = row.insertCell(0);
+		  		var cell2 = row.insertCell(1);
+		  		cell1.innerHTML = "<input type='text' id='qna_unsub_q"+window.tot_unsub_rows+"' value='"+key+"' style='width:100%;'>";
+		  		cell2.innerHTML = "<input type='text' id='qna_unsub_a"+window.tot_unsub_rows+"' value='"+qna_obj[key]+"' style='width:100%;'>";
 				
 		  		
 			}

@@ -37,8 +37,10 @@ class CustomizeForm(FlaskForm):
 	DM_reply_time = StringField("Dm reply time", validators=[DataRequired()])
 	tweet_time = SelectField("Tweet frequency",choices=[("3600", "Hourly"), ('86400', 'Daily'), ('604800', 'Weekly')], validators=[DataRequired()])
 	files = MultipleFileField("Selelct files for bot to use.")
-	names = TextAreaField("Enter twitter id names, that you wat the bot to reply.")
-	questions = StringField()
+	block_names = TextAreaField("Enter twitter id names, that bot will not reply.")
+	sub_names = TextAreaField("Enter subscribed users.")
+	questions_sub = StringField()
+	questions_unsub = StringField()
 	tweets = TextAreaField()
 	submit = SubmitField('Save')		
 

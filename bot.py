@@ -20,6 +20,12 @@ class Bot(threading.Thread):
 		threading.Thread.__init__(self,name=name) 
 		self.api = api
 		self.uid = uid
+		filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(uid)+'/logs.log', 'a')
+		log = logging.getLogger()
+		for hdlr in log.handlers[:]:
+			if isinstance(hdlr,logging.FileHandler): 
+				log.removeHandler(hdlr)
+		log.addHandler(filehandler) 
 		
 	def run(self):
 		try:
@@ -45,7 +51,8 @@ class Bot(threading.Thread):
 		files = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
 		#files.extend(['media/'+str(self.uid)+'/vid/'+v for v in os.listdir('media/'+str(self.uid)+'/vid/')])
 		rd_file = random.randint(0,len(files)-1)
-		qna = json.loads(user_set.questions)
+		qna_sub = json.loads(user_set.questions_sub)
+		qna_unsub = json.loads(user_set.questions_unsub)
 		msg_path = app.config['UPLOAD_PATH']+str(self.uid)+"/ls_seen/msg_seen.txt"
 		prev_msg = self.get_msg(msg_path)		
 		print(prev_msg)
@@ -60,18 +67,33 @@ class Bot(threading.Thread):
 						new_msg[dm.message_create['sender_id']] = dm.message_create["message_data"]['text']
 						prev_msg[dm.message_create['sender_id']][dm.created_timestamp] = dm.message_create["message_data"]['text']
 		for sender_id, msg in new_msg.items():
-			sent = False
-			if any([True if v in msg.lower().split(' ') else False for v in ['pic','picture','image','sample']]):
-				med = self.api.media_upload(filename  = files[rd_file])
-				self.api.send_direct_message(sender_id, text="Here's the sample image...",attachment_type='media', attachment_media_id=med.media_id)
-				sent = True
-			else:
-				for que,ans in qna.items():
-					if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
-						self.api.send_direct_message(sender_id,text=ans)
-						sent = True
-			if not sent:
-				self.api.send_direct_message(sender_id,text="Hello! thank you for messaging, Im busy will get back to you after 5 mins.")
+			try:
+				block_ids = [self.api.get_user(sr_nm).id_str for sr_nm in user_set.block_names]
+			except:
+				block_ids = []
+			try:
+				sub_ids = [self.api.get_user(sr_nm).id_str for sr_nm in user_set.sub_names]
+			except:
+				sub_ids = []
+			if sender_id not in block_ids:
+				sent = False
+				if any([True if v in msg.lower().split(' ') else False for v in ['pic','picture','image','sample']]):
+					med = self.api.media_upload(filename  = files[rd_file])
+					self.api.send_direct_message(sender_id, text="Here's the sample image...",attachment_type='media', attachment_media_id=med.media_id)
+					sent = True
+				else:
+					if sender_id in sub_ids:
+						for que,ans in qna_sub.items():
+							if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
+								self.api.send_direct_message(sender_id,text=ans)
+								sent = True
+					else:
+						for que,ans in qna_unsub.items():
+							if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
+								self.api.send_direct_message(sender_id,text=ans)
+								sent = True
+				if not sent:
+					self.api.send_direct_message(sender_id,text="Hello! thank you for messaging, Im busy will get back to you after 5 mins.")
 		self.store_msg(json.dumps(prev_msg),msg_path)
 		time.sleep(int(user_set.DM_reply_time))
 

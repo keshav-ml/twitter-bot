@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship, backref
 from flask_login import UserMixin
 from flask_login import LoginManager
 from werkzeug.security import generate_password_hash, check_password_hash
+import logging
 
 Base = declarative_base()
 
@@ -20,7 +21,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat_bot.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-
+app.logger.disabled = True
+log = logging.getLogger('werkzeug')
+log.disabled = True
 
 
 
@@ -65,16 +68,20 @@ class User_settings(db.Model):
 	user = relationship("User",backref=backref("user", uselist=False))
 	DM_reply_time = db.Column(db.String(),nullable=False)
 	tweet_time = db.Column(db.String(),unique=False,nullable=False)
-	names = db.Column(db.String(),unique=False,nullable=True)
-	questions = db.Column(db.String(),nullable=True)
+	block_names = db.Column(db.String(),unique=False,nullable=True)
+	sub_names = db.Column(db.String(),unique=False,nullable=True)
+	questions_sub = db.Column(db.String(),nullable=True)
+	questions_unsub = db.Column(db.String(),nullable=True)
 	tweets = db.Column(db.String(),nullable=True)
 
-	def __init__(self, user_id, DM_reply_time,tweet_time,names,questions,tweets):
+	def __init__(self, user_id, DM_reply_time,tweet_time,block_names,sub_names,questions_sub,questions_unsub,tweets):
 		self.user_id = user_id
 		self.DM_reply_time = DM_reply_time
 		self.tweet_time = tweet_time
-		self.names = names
-		self.questions = questions
+		self.block_names = block_names
+		self.sub_names = sub_names
+		self.questions_sub = questions_sub
+		self.questions_unsub = questions_unsub
 		self.tweets = tweets
 		
 	def __repr__(self):
@@ -85,8 +92,10 @@ class User_settings(db.Model):
 			DM_reply_time = self.DM_reply_time
 			tweet_time = self.tweet_time
 			files = None
-			names = self.names
-			questions = self.questions
+			block_names = self.block_names
+			sub_names = self.sub_names
+			questions_sub = self.questions_sub
+			questions_unsub = self.questions_unsub
 			tweets = self.tweets
 		return temp()
 			
