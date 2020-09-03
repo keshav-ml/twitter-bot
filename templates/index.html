@@ -1,16 +1,6 @@
 {% extends "base.html" %}
 
 
-{% block scripts %}
-
-<script type="text/javascript">
-  {% if bot_status %}
-  window.setTimeout(function(){window.location.replace("/index");},10000)
-  {% endif %}
-</script>
-
-{% endblock %}
-
 
 {% block content %}
 
@@ -37,11 +27,7 @@
     padding: 15px 15px 15px 15px;
     overflow-y: scroll;"
     >
-    {% for log in logs %}
-    <div>
-    {{log}}
-  </div><br>
-    {% endfor %}
+    
   </div>
 
     <small class="d-block text-right mt-3"></small>
@@ -61,8 +47,35 @@
 </div>
 
 <script type="text/javascript">
-  var objDiv = document.getElementById("logs_disp");
-  objDiv.scrollTop = objDiv.scrollHeight;
+  
+  
+  async function get_log(){
+    fetch('/logs').then(data=>{return data.text()})
+                  .then(res=>{
+                    logs = JSON.parse(res)
+                    var disp = document.getElementById('logs_disp');
+                    var data = "";
+                    for (var i = window.logs.length - 1; i >= 0; i--) {
+                      data+='<div>'+window.logs[i]+'</div>';
+                      }
+                    disp.innerHTML = data;
+                    var objDiv = document.getElementById("logs_disp");
+                    objDiv.scrollTop = objDiv.scrollHeight;                  
+
+                  })
+      return 0;      
+  }
+  {% if bot_status %}
+  try{
+  window.setTimeout(get_log(),10000)
+  }catch(e){
+    console.log(e)
+  }
+
+  {% else %}
+  get_log()
+  {% endif %}
+  
 	var but = document.getElementById("tog_but");
 	{% if bot_status %}	
 		window.but.innerHTML = "Stop"

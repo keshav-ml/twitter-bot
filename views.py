@@ -10,9 +10,10 @@ import pandas as pd
 import numpy as np
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
+import json
 from filetype import guess
 import logging
-from bot import Bot
+from bot import Bot_tweet, Bot_reply, Bot_mention
 
 format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO,
@@ -81,14 +82,45 @@ def customize_bot():
 	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
 	usr_settings = User_settings.query.filter_by(user_id=user.id)
 	if usr_settings.first():	
-		form = CustomizeForm(obj=usr_settings.first().to_obj())
+		set_obj = usr_settings.first().to_obj()
+		block_ids = []
+		sub_ids = []
+
+		for id_s in set_obj.block_names.split(' '):
+			try:
+				block_ids.append(api.get_user(id_s).screen_name)
+			except:
+				block_ids.append("")
+		for id_s in set_obj.sub_names.split(' '):
+			try:
+				sub_ids.append(api.get_user(id_s).screen_name)
+			except:
+				sub_ids.append("")
+
+		set_obj.block_names = " ".join([k for k in block_ids])
+		set_obj.sub_names = " ".join([k for k in sub_ids])
+
+		form = CustomizeForm(obj=set_obj)
 	else:
 		form = CustomizeForm()
 	if form.validate_on_submit():
+		block_ids = []
+		sub_ids = []
 
-		block_ids = " ".join(form.block_names.data.strip().split(' '))
-		sub_ids = " ".join(form.sub_names.data.strip().split(' '))
+		for sr_nm in form.block_names.data.strip().split(' '):
+			try:
+				block_ids.append(api.get_user(sr_nm).id_str)
+			except:
+				block_ids.append("")
+		for sr_nm in form.sub_names.data.strip().split(' '):
+			try:
+				sub_ids.append(api.get_user(sr_nm).id_str)
+			except:
+				sub_ids.append("")
 
+		block_ids = " ".join([k for k in block_ids])
+		sub_ids = " ".join([k for k in sub_ids])
+		print(block_ids)
 		if usr_settings.first():
 			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data,tweets=form.tweets.data))
 		else:
@@ -148,8 +180,12 @@ def index(command=None):
 
 	if command == 'activate':		
 		bot_status = True
-		bot = Bot(name=usernm,api=api,uid = user.id)		
-		bot.start()
+		bot_tw = Bot_tweet(name=usernm,api=api,uid = user.id)
+		bot_men = Bot_mention(name=usernm,api=api,uid = user.id)
+		bot_re = Bot_reply(name=usernm,api=api,uid = user.id)
+		bot_tw.start()
+		bot_men.start()
+		bot_re.start()
 		logging.info("Bot started")
 		db.session.commit()
 
@@ -165,12 +201,7 @@ def index(command=None):
 			print(t.getName())
 			
 	
-
-	logs = []
-	with open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','r') as f:
-		for line in f.readlines():
-			logs.append(line)
-	return render_template('index.html',user_obj=user_obj,bot_status=bot_status,logs = logs)
+	return render_template('index.html',user_obj=user_obj,bot_status=bot_status)
 
 @app.route('/logout')
 def logout():
@@ -191,6 +222,17 @@ def delete_file(user_id,f_type,name):
 	os.remove(path)
 	flash("Image deleted")
 	return redirect(url_for('customize_bot'))
+
+
+@app.route('/logs',methods=['GET','POST'])
+def get_log():
+	logs = []
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	with open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','r') as f:
+		for line in f.readlines():
+			logs.append(line)
+	return json.dumps(logs)
 
 
 
