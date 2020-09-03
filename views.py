@@ -6,12 +6,9 @@ from werkzeug.utils import secure_filename
 import os
 import threading
 import time
-import pandas as pd
-import numpy as np
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
 import json
-from filetype import guess
 import logging
 from bot import Bot_tweet, Bot_reply, Bot_mention
 
