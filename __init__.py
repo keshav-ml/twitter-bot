@@ -19,8 +19,9 @@ api_sec_key = "Asv6TgPPc5ONl6saKm8aAz9aIC4sKoVCEeJvBbUFUZKXTMlVbM"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat_bot.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+#app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024
 
+db = SQLAlchemy(app)
 app.logger.disabled = True
 log = logging.getLogger('werkzeug')
 log.disabled = True

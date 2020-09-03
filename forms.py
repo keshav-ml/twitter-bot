@@ -4,6 +4,8 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField, Selec
 from wtforms.validators import ValidationError, DataRequired, EqualTo
 from __init__ import User
 
+
+
 class LoginForm(FlaskForm):
 	"""
 	Login Class for creating login form 

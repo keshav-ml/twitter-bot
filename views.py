@@ -64,7 +64,7 @@ def customize_bot():
 	user = User.query.filter_by(username=usernm).first()
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
 	auth.set_access_token(user.acc_token,user.acc_secret)
-	api = tweepy.API(auth)
+	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
 	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'
 	path_to_img = app.config['UPLOAD_PATH']+str(user.id)+'/img/'
@@ -164,7 +164,7 @@ def index(command=None):
 		file2 = open(filename+'msg_seen.txt','w')
 		file2.close()
 	
-	api = tweepy.API(auth)
+	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
 	stop_eve = threading.Event()
 	main_th = threading.current_thread()

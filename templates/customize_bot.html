@@ -25,6 +25,27 @@
 	  tab.style.display = "block";
 
 	}	
+
+
+
+	function myFunction2(vids) {
+	  // Get the expanded image
+	  var expandvid = document.getElementById("expandedVid");
+	  var tab = document.getElementById("tab_vid");
+	  // Get the image text
+	  var vidText = document.getElementById("vidtext");
+	  // Use the same src in the expanded image as the image being clicked on from the grid
+	  expandvid.src = vids.src;
+	  // Use the value of the alt attribute of the clickable image as text inside the expanded image
+	  vidText.innerHTML = vids.alt;
+	  // Show the container element (hidden with CSS)
+	  expandvid.parentElement.style.display = 'block'
+	  expandvid.style.display = "block";
+	  tab.style.display = "block";
+
+	}	
+
+
 	function delete_img(imgs){
 	  	var tab = document.getElementById("tab");
 		var img = document.getElementById("expandedImg");
@@ -35,6 +56,21 @@
 			tab.style.display = "None";
 			img.style.display = 'None';
 			window.location = img_src+'/delete';	
+		}
+
+		
+	}
+
+	function delete_vid(imgs){
+	  	var tab = document.getElementById("tab_vid");
+		var vid = document.getElementById("expandedVid");
+		var vid_src =  vid.src;
+		var ask = window.confirm("Are you sure you want to delete this Video?");
+		if (ask){
+			vid.parentElement.style.display = "None";
+			tab.style.display = "None";
+			vid.style.display = 'None';
+			window.location = vid_src+'/delete';	
 		}
 
 		
@@ -269,13 +305,31 @@
     			{% for file in vid_files %}
     				<div class="column">
     					<div style="float: left;"><font>{{file.split('/')[-1]}}</font></div>
-					    <div style="float: left;"><video src="{{file}}" alt="{{file.split('/')[-1]}}" controls></div>
+					    <div style="float: left;"><video src="{{file}}" alt="{{file.split('/')[-1]}}" onclick="myFunction2(this);"/></div>
 					</div>
     			{% endfor %}
     		{% endif %}
     		</div>
+    		<div class="container">
+			  <!-- Close the image -->
+			  
+			  <div style="background-color: black; text-align: right;" class="dispclass" id="tab_vid">
+			  <div id="vidtext" style="text-align: left;float: left; padding: 8px; font-size: 15px;"></div>
+			  <span onclick="document.getElementById('expandedVid').style.display='none'; this.parentElement.style.display='none';" style="margin-right: 10px;" class="closebtn">&times;</span>
+			  <span onclick="delete_vid(this);" style="margin-right: 10px; font-size: 23px; height: 100%;" class="fa closebtn">&#xf014;</span><br>
+			  
+			  </div>
+			  <!-- Expanded image -->
+			  <video id="expandedVid" style="width:100%;height: 100%" controls class="dispclass">
+
+			  
+			  
+			
+			</div>
 
 		</div>
+
+		
 </div>
 
 

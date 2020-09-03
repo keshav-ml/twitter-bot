@@ -41,10 +41,10 @@ class Bot_tweet(threading.Thread):
 				rand_file = random.randint(0,len(files)-1)
 				if random.randint(0,10) % 2 == 0:
 					med = self.api.media_upload(filename  = files[rand_file])
-					#self.api.update_status(tweets[rand_int],media_ids=[med.media_id])
+					self.api.update_status(tweets[rand_int],media_ids=[med.media_id])
 					logging.info("tweeted with media")
 				else:
-					#self.api.update_status(tweets[rand_int])
+					self.api.update_status(tweets[rand_int])
 					logging.info("tweeted without media")
 				print(user_set.tweet_time)
 				time.sleep(int(user_set.tweet_time))
@@ -91,7 +91,7 @@ class Bot_mention(threading.Thread):
 				for mention in mentions:
 					last_id = mention.id
 					self.store_last_seen(last_id,filename)
-					#self.api.update_status("@"+str(mention.user.screen_name)+" DM me for more content",mention.id)
+					self.api.update_status("@"+str(mention.user.screen_name)+" DM me for more content",mention.id)
 					logging.info("Commented to "+str(mention.user.screen_name))
 				time.sleep(30)
 		finally:
