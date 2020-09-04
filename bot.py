@@ -148,7 +148,7 @@ class Bot_reply(threading.Thread):
 			while True:
 				user_set = User_settings.query.filter_by(user_id=self.uid).first()
 				time.sleep(int(user_set.DM_reply_time)*60)
-				dms = self.api.list_direct_messages()
+				dms = reversed(self.api.list_direct_messages())
 
 				files_img = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
 				files_vid = ['media/'+str(self.uid)+'/vid/'+v for v in os.listdir('media/'+str(self.uid)+'/vid/')]
