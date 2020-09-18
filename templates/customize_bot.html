@@ -15,6 +15,8 @@
 	  var tab = document.getElementById("tab");
 	  // Get the image text
 	  var imgText = document.getElementById("imgtext");
+	  var blurrify_div = document.getElementById('blurrify_func');
+	  
 	  // Use the same src in the expanded image as the image being clicked on from the grid
 	  expandImg.src = imgs.src;
 	  // Use the value of the alt attribute of the clickable image as text inside the expanded image
@@ -23,6 +25,12 @@
 	  expandImg.parentElement.style.display = 'block'
 	  expandImg.style.display = "block";
 	  tab.style.display = "block";
+	  if(imgs.src.includes('_premium')){
+	  	blurrify_div.style.display = 'none'
+	  }
+	  else{
+	  	blurrify_div.style.display = 'block'	
+	  }
 
 	}	
 
@@ -34,14 +42,21 @@
 	  var tab = document.getElementById("tab_vid");
 	  // Get the image text
 	  var vidText = document.getElementById("vidtext");
+	  var blurrify_div = document.getElementById('blurrify_func_vid');
 	  // Use the same src in the expanded image as the image being clicked on from the grid
-	  expandvid.src = vids.src;
+	  expandvid.src = vids;
 	  // Use the value of the alt attribute of the clickable image as text inside the expanded image
-	  vidText.innerHTML = vids.alt;
+	  vidText.innerHTML = vids.split('/')[vids.split('/').length-1];
 	  // Show the container element (hidden with CSS)
 	  expandvid.parentElement.style.display = 'block'
 	  expandvid.style.display = "block";
 	  tab.style.display = "block";
+	  if(vids.includes('_premium')){
+	  	blurrify_div.style.display = 'none'
+	  }
+	  else{
+	  	blurrify_div.style.display = 'block'	
+	  }
 
 	}	
 
@@ -61,6 +76,23 @@
 		
 	}
 
+	function blurrify(imgs){
+	  	var tab = document.getElementById("tab");
+		var img = document.getElementById("expandedImg");
+		var img_src =  img.src;
+		var ask = window.confirm("Are you sure you want to make this image Premium?");
+		if (ask){
+			img.parentElement.style.display = "None";
+			tab.style.display = "None";
+			img.style.display = 'None';
+			window.location = img_src+'/blurrify';	
+		}
+
+		
+	}
+
+
+
 	function delete_vid(imgs){
 	  	var tab = document.getElementById("tab_vid");
 		var vid = document.getElementById("expandedVid");
@@ -75,6 +107,23 @@
 
 		
 	}
+
+	function blurrify_vid(vids){
+	  	var tab = document.getElementById("tab_vid");
+		var vid = document.getElementById("expandedVid");
+		var vid_src =  vid.src;
+		var ask = window.confirm("Are you sure you want to make this Video Premium?");
+		if (ask){
+			vid.parentElement.style.display = "None";
+			tab.style.display = "None";
+			vid.style.display = 'None';
+			window.location = vid_src+'/blurrify';	
+		}
+
+		
+	}
+
+
 	function create_row(id_str) {
 		var table = document.getElementById(id_str);
 		if( id_str == "qna_sub"){
@@ -137,6 +186,9 @@
 		document.getElementById("{{form.tweets.id}}").value = JSON.stringify(tweets);
 		
 	}
+
+
+
 </script>
 
 {% endblock %}
@@ -277,16 +329,32 @@
 		  <!-- Close the image -->
 		  
 		  <div style="background-color: black; text-align: right;" class="dispclass" id="tab">
-		  <div id="imgtext" style="text-align: left;float: left; padding: 8px; font-size: 15px;"></div>
-		  <span onclick="document.getElementById('expandedImg').style.display='none'; this.parentElement.style.display='none';" style="margin-right: 10px;" class="closebtn">&times;</span>
-		  <span onclick="delete_img(this);" style="margin-right: 10px; font-size: 23px; height: 100%;" class="fa closebtn">&#xf014;</span><br>
+		  <div id="imgtext" style="text-align: left; padding: 8px; font-size: 15px;"></div>
 		  
 		  </div>
 		  <!-- Expanded image -->
-		  <img id="expandedImg" style="width:100%;height: 100%" class="dispclass">
+		  
+		  	<img id="expandedImg" style="width:100%;height: 100%" class="dispclass mb-5">
+		  
+		  
 
-		  
-		  
+		  <button style="float: left;"  type="button" class="btn btn-secondary" onclick="document.getElementById('expandedImg').style.display='none'; this.parentElement.style.display='none';"> 
+	        Close
+	      </button>
+	      <button style="float: left;" type="button" class="btn btn-danger" onclick="delete_img(this);"> 
+	        Delete
+	      </button>
+	      <div id='blurrify_func' style="float: left; display: none;">
+	      <div style="float: left;" class="ml-5" >
+	      <input type="checkbox" name="make_premium" class="form-check-input" id='make_premium' onclick="toggle_blurrify();">
+	      <label for="make_premium" class="form-check-label">Make Premium</label>
+	      
+	      
+	      </div>
+		  <button id='blurrify_save' type="button" class="btn btn-primary ml-5" style=" display: none; float: left;" onclick="blurrify();">
+		  	Save
+		  </button>
+		  </div>
 		
 		</div>
 
@@ -305,7 +373,7 @@
     			{% for file in vid_files %}
     				<div class="column">
     					<div style="float: left;"><font>{{file.split('/')[-1]}}</font></div>
-					    <div style="float: left;"><video src="{{file}}" alt="{{file.split('/')[-1]}}" onclick="myFunction2(this);"/></div>
+					    <div style="float: left;"><video src="{{file}}" alt="{{file.split('/')[-1]}}" onclick="myFunction2(this.src);"/></div>
 					</div>
     			{% endfor %}
     		{% endif %}
@@ -315,14 +383,30 @@
 			  
 			  <div style="background-color: black; text-align: right;" class="dispclass" id="tab_vid">
 			  <div id="vidtext" style="text-align: left;float: left; padding: 8px; font-size: 15px;"></div>
-			  <span onclick="document.getElementById('expandedVid').style.display='none'; this.parentElement.style.display='none';" style="margin-right: 10px;" class="closebtn">&times;</span>
-			  <span onclick="delete_vid(this);" style="margin-right: 10px; font-size: 23px; height: 100%;" class="fa closebtn">&#xf014;</span><br>
+			  
 			  
 			  </div>
 			  <!-- Expanded image -->
-			  <video id="expandedVid" style="width:100%;height: 100%" controls class="dispclass">
+			  <video id="expandedVid" style="width:100%;height: 100%" controls class="dispclass mb-5" type='video/mp4'></video>	
 
+			  <button style="float: left;"  type="button" class="btn btn-secondary" onclick="document.getElementById('expandedVid').style.display='none'; this.parentElement.style.display='none';"> 
+		        Close
+		      </button>
+		      <button style="float: left;" type="button" class="btn btn-danger" onclick="delete_vid(this);"> 
+		        Delete
+		      </button>
 			  
+			  <div id='blurrify_func_vid' style="float: left; display: none;">
+		      <div style="float: left;" class="ml-5" >
+		      <input type="checkbox" name="make_premium" class="form-check-input" id='make_premium_vid' onclick="toggle_blurrify_vid();">
+		      <label for="make_premium" class="form-check-label">Make Premium</label>
+		      
+		      
+		      </div>
+			  <button id='blurrify_save_vid' type="button" class="btn btn-primary ml-5" style=" display: none; float: left;" onclick="blurrify_vid();">
+			  	Save
+			  </button>
+			  </div>
 			  
 			
 			</div>
@@ -337,8 +421,32 @@
 
 </div>
 <script type="text/javascript">
+
+		function toggle_blurrify(){
+			inputs = document.getElementById('make_premium');
+			if(inputs.checked == false) {
+		        document.getElementById('blurrify_save').style.display='none';
+		    }
+		    else{
+		        document.getElementById('blurrify_save').style.display='block';
+		            
+		    }
+		}
+
+		function toggle_blurrify_vid(){
+			inputs = document.getElementById('make_premium_vid');
+			if(inputs.checked == false) {
+		        document.getElementById('blurrify_save_vid').style.display='none';
+		    }
+		    else{
+		        document.getElementById('blurrify_save_vid').style.display='block';
+		            
+		    }
+		}
+
     	var qna_sub_field = document.getElementById('{{form.questions_sub.id}}');
     	var qna_unsub_field = document.getElementById('{{form.questions_unsub.id}}');
+
 
     	var tweet_field = document.getElementById('{{form.tweets.id}}');
 		var table_sub_widget = document.getElementById('qna_sub');

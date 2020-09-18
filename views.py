@@ -9,7 +9,10 @@ import time
 from forms import LoginForm, RegistrationForm, CustomizeForm
 import tweepy
 import json
+import cv2
+from datetime import datetime
 import logging
+from PIL import Image, ImageFilter
 from bot import Bot_tweet, Bot_reply, Bot_mention
 
 format = "%(asctime)s: %(message)s"
@@ -74,6 +77,9 @@ def customize_bot():
 		os.makedirs(path_to_img)
 		os.makedirs(path_to_vid)
 		f = open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','w')
+		f.close()
+		f = open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json','w')
+		f.write("{}")
 		f.close()
 	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
 	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
@@ -148,6 +154,11 @@ def index(command=None):
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
 	auth.set_access_token(user.acc_token,user.acc_secret)
 
+	path_to_img = app.config['UPLOAD_PATH']+str(user.id)+'/img/'
+	path_to_vid = app.config['UPLOAD_PATH']+str(user.id)+'/vid/'
+	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
+	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
+
 	filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log', 'a')
 	log = logging.getLogger()
 	for hdlr in log.handlers[:]:
@@ -177,10 +188,8 @@ def index(command=None):
 
 	if command == 'activate':		
 		bot_status = True
-		bot_tw = Bot_tweet(name=usernm,api=api,uid = user.id)
 		bot_men = Bot_mention(name=usernm,api=api,uid = user.id)
 		bot_re = Bot_reply(name=usernm,api=api,uid = user.id)
-		bot_tw.start()
 		bot_men.start()
 		bot_re.start()
 		logging.info("Bot started")
@@ -196,9 +205,10 @@ def index(command=None):
 				t.raise_exception()
 		for t in threading.enumerate():
 			print(t.getName())
-			
 	
-	return render_template('index.html',user_obj=user_obj,bot_status=bot_status)
+	tasks = json.load(open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json'))		
+	
+	return render_template('index.html',user_obj=user_obj,im_files = i_names,v_files=v_names,bot_status=bot_status,tasks=tasks)
 
 @app.route('/logout')
 def logout():
@@ -209,12 +219,49 @@ def logout():
 def files(user_id,f_type,name):
 	return send_file(app.config['UPLOAD_PATH']+user_id+'/'+f_type+'/'+name)
 
+@app.route('/media/<user_id>/<f_type>/<name>/blurrify',methods=['GET','POST'])
+def blurrify(user_id,f_type,name):
+	filename = secure_filename(name)
+	path_to_media = app.config['UPLOAD_PATH']+str(user_id)+'/'+f_type+'/'	
+	path = os.path.join(path_to_media,filename)
+	if any([filename.lower().endswith(k) for k in ['png','jpg','jpeg']]):
+		img = Image.open(path)
+		b_img = img.filter(ImageFilter.BoxBlur(10))
+		b_img.save(os.path.join(path_to_media,filename[:-4]+'_premium'+filename[-4:]))
+	elif any([filename.lower().endswith(k) for k in ['mkv','mp4','webm','mov']]):
+		cap = cv2.VideoCapture(path)
+		frame_width = int(cap.get(3)) 
+		frame_height = int(cap.get(4)) 
+		codec_dict = {
+		'.mp4':cv2.VideoWriter_fourcc('m','p','4','v'),
+		'webm':cv2.VideoWriter_fourcc('w','e','b','m'),
+		'.mov':cv2.VideoWriter_fourcc('m','o','v','v')
+		
+		}
+		size = (frame_width, frame_height)
+		res = cv2.VideoWriter(
+			os.path.join(path_to_media,filename[:-4]+'_premium'+filename[-4:]),
+			0x7634706d, 
+            cap.get(cv2.CAP_PROP_FPS), size
+			)
+		while True:
+			ret,  frame = cap.read()
+			if ret:
+				gray = cv2.GaussianBlur(frame, (11, 11), 0)
+				res.write(gray)
+			else:
+				res.release()
+				cap.release()
+				cv2.destroyAllWindows()
+				break
+		cv2.destroyAllWindows() 
+
+	return redirect(url_for('customize_bot'))
+
 @app.route('/media/<user_id>/<f_type>/<name>/delete',methods=['GET','POST'])
 def delete_file(user_id,f_type,name):
 	filename = secure_filename(name)
-	usernm = current_user.username
-	user = User.query.filter_by(username=usernm).first()
-	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'+f_type+'/'
+	path_to_media = app.config['UPLOAD_PATH']+str(user_id)+'/'+f_type+'/'
 	path = os.path.join(path_to_media,filename)
 	os.remove(path)
 	flash("Image deleted")
@@ -239,4 +286,55 @@ def log_clear():
 	user = User.query.filter_by(username=usernm).first()
 	with open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','w') as f:
 		f.truncate()
+	return redirect(url_for('bot_logs'))
+
+
+
+@app.route('/post/add',methods=['GET','POST'])
+def post_add():
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	
+	auth = tweepy.OAuthHandler(api_key,api_sec_key)
+	auth.set_access_token(user.acc_token,user.acc_secret)
+	api = tweepy.API(auth,wait_on_rate_limit=True)
+	user_obj = api.me()
+
+	time = datetime.timestamp(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M")) - datetime.timestamp(datetime.now())
+
+	post = {}
+	post['time'] = time
+	post['media'] = request.form.get('media')
+	post['text'] = request.form.get('tweet_txt')
+
+	tasks = json.load(open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json'))
+	post['id'] = str(len(tasks))
+	
+	bot_tw = Bot_tweet(name=usernm,api=api,uid = user.id, post = post)
+	bot_tw.start()
+
+	post['time'] = request.form.get('time')
+	tasks[str(len(tasks))] = post
+	json.dump(tasks,open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json','w'))
+
+	logging.info("Tweet post created")
+
 	return redirect(url_for('index'))
+
+@app.route('/bot_logs',methods=['GET','POST'])
+def bot_logs():
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	auth = tweepy.OAuthHandler(api_key,api_sec_key)
+	auth.set_access_token(user.acc_token,user.acc_secret)
+
+	api = tweepy.API(auth,wait_on_rate_limit=True)
+	user_obj = api.me()
+
+
+	return render_template('bot_logs.html',user_obj=user_obj)
+
+
+
+
+

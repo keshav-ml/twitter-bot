@@ -16,10 +16,11 @@ logging.basicConfig(format=format, level=logging.INFO,
 
 class Bot_tweet(threading.Thread):
         
-	def __init__(self, name,api,uid):
+	def __init__(self, name,api,uid,post):
 		threading.Thread.__init__(self,name=name) 
 		self.api = api
 		self.uid = uid
+		self.post = post
 		filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(uid)+'/logs.log', 'a')
 		log = logging.getLogger()
 		for hdlr in log.handlers[:]:
@@ -29,7 +30,7 @@ class Bot_tweet(threading.Thread):
 
 	def run(self):
 		try:
-			logging.info("tweet thread running")
+			'''logging.info("Tweet thread running")
 			while True:		
 				user_set = User_settings.query.filter_by(user_id=self.uid).first()
 				tweets = json.loads(user_set.tweets)
@@ -47,9 +48,28 @@ class Bot_tweet(threading.Thread):
 					self.api.update_status(tweets[rand_int])
 					logging.info("tweeted without media")
 				print(user_set.tweet_time)
-				time.sleep(int(user_set.tweet_time))
+				time.sleep(int(user_set.tweet_time))'''
+			
+			path_to_im = app.config['UPLOAD_PATH']+str(self.uid)+'/img/'
+			path_to_v = app.config['UPLOAD_PATH']+str(self.uid)+'/vid/'
+			time.sleep(int(self.post['time']))
+			
+			if self.post['media']:
+				if any([self.post['media'].lower().endswith(k) for k in ['png','jpg','jpeg']]):
+					med = self.api.media_upload(filename=path_to_im+self.post['media'])
+				else:
+					med = self.api.media_upload(filename=path_to_v+self.post['media'])
+				
+				self.api.update_status(self.post['text'],media_ids=[med.media_id])
+
+			else:
+				self.api.update_status(self.post['text'])
+
 		finally:
-			logging.info("Tweet function stopped")
+			tasks = json.load(open(app.config['UPLOAD_PATH']+str(self.uid)+'/tasks.json'))
+			del tasks[self.post['id']]
+			json.dump(tasks,open(app.config['UPLOAD_PATH']+str(self.uid)+'/tasks.json','w'))
+			logging.info("Tweeted")
 
 
 	def get_id(self):
