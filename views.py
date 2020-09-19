@@ -146,9 +146,7 @@ def customize_bot():
 
 @app.route('/index/')
 @app.route('/index')
-@app.route('/index/<command>')
-@login_required
-def index(command=None):
+def index():
 	usernm = current_user.username
 	user = User.query.filter_by(username=usernm).first()
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
@@ -159,14 +157,6 @@ def index(command=None):
 	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
 	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
 
-	filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log', 'a')
-	log = logging.getLogger()
-	for hdlr in log.handlers[:]:
-		if isinstance(hdlr,logging.FileHandler):
-			log.removeHandler(hdlr)
-	log.addHandler(filehandler) 
-
-	
 	filename  = app.config['UPLOAD_PATH']+str(user.id)+'/ls_seen/'
 	if not os.path.exists(filename):
 		os.makedirs(filename)
@@ -178,37 +168,11 @@ def index(command=None):
 	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
 	stop_eve = threading.Event()
-	main_th = threading.current_thread()
-	bot_status = False
-	for t in threading.enumerate():
-		if t is main_th:
-			continue
-		elif t.getName()  == usernm:
-			bot_status = True
-
-	if command == 'activate':		
-		bot_status = True
-		bot_men = Bot_mention(name=usernm,api=api,uid = user.id)
-		bot_re = Bot_reply(name=usernm,api=api,uid = user.id)
-		bot_men.start()
-		bot_re.start()
-		logging.info("Bot started")
-		db.session.commit()
-
-	elif command == 'deactivate':
-		bot_status = False
-		logging.info("stopping Bot")
-		for t in threading.enumerate():
-			if t is main_th:
-				continue
-			elif t.getName()  == usernm:
-				t.raise_exception()
-		for t in threading.enumerate():
-			print(t.getName())
+	
 	
 	tasks = json.load(open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json'))		
 	
-	return render_template('index.html',user_obj=user_obj,im_files = i_names,v_files=v_names,bot_status=bot_status,tasks=tasks)
+	return render_template('index.html',user_obj=user_obj,im_files = i_names,v_files=v_names,tasks=tasks)
 
 @app.route('/logout')
 def logout():
@@ -322,7 +286,9 @@ def post_add():
 	return redirect(url_for('index'))
 
 @app.route('/bot_logs',methods=['GET','POST'])
-def bot_logs():
+@app.route('/bot_logs/<command>')
+@login_required
+def bot_logs(command=None):
 	usernm = current_user.username
 	user = User.query.filter_by(username=usernm).first()
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
@@ -331,8 +297,42 @@ def bot_logs():
 	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
 
+	filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log', 'a')
+	log = logging.getLogger()
+	for hdlr in log.handlers[:]:
+		if isinstance(hdlr,logging.FileHandler):
+			log.removeHandler(hdlr)
+	log.addHandler(filehandler) 
 
-	return render_template('bot_logs.html',user_obj=user_obj)
+	main_th = threading.current_thread()
+	bot_status = False
+	for t in threading.enumerate():
+		if t is main_th:
+			continue
+		elif t.getName()  == usernm:
+			bot_status = True
+
+	if command == 'activate':		
+		bot_status = True
+		bot_men = Bot_mention(name=usernm,api=api,uid = user.id)
+		bot_re = Bot_reply(name=usernm,api=api,uid = user.id)
+		bot_men.start()
+		bot_re.start()
+		logging.info("Bot started")
+		db.session.commit()
+
+	elif command == 'deactivate':
+		bot_status = False
+		logging.info("stopping Bot")
+		for t in threading.enumerate():
+			if t is main_th:
+				continue
+			elif t.getName()  == usernm:
+				t.raise_exception()
+		for t in threading.enumerate():
+			print(t.getName())
+
+	return render_template('bot_logs.html',user_obj=user_obj,bot_status=bot_status)
 
 
 
