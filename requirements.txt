@@ -24,3 +24,4 @@ TwitterAPI==2.5.14
 urllib3==1.25.10
 Werkzeug==1.0.1
 WTForms==2.3.3
+gunicorn
