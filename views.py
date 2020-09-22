@@ -15,6 +15,8 @@ import logging
 from PIL import Image, ImageFilter
 from bot import Bot_tweet, Bot_reply, Bot_mention
 
+from TwitterAPI import TwitterAPI
+
 format = "%(asctime)s: %(message)s"
 logging.basicConfig(format=format, level=logging.INFO,
                         datefmt="%H:%M:%S")
@@ -125,9 +127,9 @@ def customize_bot():
 		sub_ids = " ".join([k for k in sub_ids])
 		print(block_ids)
 		if usr_settings.first():
-			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,tweet_time=form.tweet_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data,tweets=form.tweets.data))
+			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data))
 		else:
-			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,tweet_time=form.tweet_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data,tweets=form.tweets.data)
+			new_settings = User_settings(user_id = user.id,DM_reply_time= form.DM_reply_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data)
 			db.session.add(new_settings)
 		db.session.commit()
 
@@ -191,22 +193,21 @@ def blurrify(user_id,f_type,name):
 	if any([filename.lower().endswith(k) for k in ['png','jpg','jpeg']]):
 		img = Image.open(path)
 		b_img = img.filter(ImageFilter.BoxBlur(10))
-		b_img.save(os.path.join(path_to_media,filename[:-4]+'_premium'+filename[-4:]))
+		b_img.save(os.path.join(path_to_media,filename.split('.')[0]+'_premium.'+filename.split('.')[-1]))
 	elif any([filename.lower().endswith(k) for k in ['mkv','mp4','webm','mov']]):
 		cap = cv2.VideoCapture(path)
-		frame_width = int(cap.get(3)) 
-		frame_height = int(cap.get(4)) 
 		codec_dict = {
-		'.mp4':cv2.VideoWriter_fourcc('m','p','4','v'),
+		'.mp4':0x7634706d,
 		'webm':cv2.VideoWriter_fourcc('w','e','b','m'),
-		'.mov':cv2.VideoWriter_fourcc('m','o','v','v')
-		
 		}
-		size = (frame_width, frame_height)
+		if filename.split('.')[-1] == 'webm':
+			fourcc =  cv2.VideoWriter_fourcc(*'VP90')
+		else:
+			fourcc = 0x7634706d
 		res = cv2.VideoWriter(
-			os.path.join(path_to_media,filename[:-4]+'_premium'+filename[-4:]),
-			0x7634706d, 
-            cap.get(cv2.CAP_PROP_FPS), size
+			os.path.join(path_to_media,filename.split('.')[0]+'_premium.'+filename.split('.')[-1]),
+			fourcc, 
+            cap.get(cv2.CAP_PROP_FPS), (int(cap.get(3)), int(cap.get(4)))
 			)
 		while True:
 			ret,  frame = cap.read()
@@ -264,6 +265,8 @@ def post_add():
 	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
 
+	api_vid = TwitterAPI(api_key,api_sec_key,user.acc_token,user.acc_secret)
+
 	time = datetime.timestamp(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M")) - datetime.timestamp(datetime.now())
 
 	post = {}
@@ -274,7 +277,7 @@ def post_add():
 	tasks = json.load(open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json'))
 	post['id'] = str(len(tasks))
 	
-	bot_tw = Bot_tweet(name=usernm,api=api,uid = user.id, post = post)
+	bot_tw = Bot_tweet(name=usernm,api=api,uid = user.id,api_vid = api_vid, post = post)
 	bot_tw.start()
 
 	post['time'] = request.form.get('time')
@@ -295,6 +298,9 @@ def bot_logs(command=None):
 	auth.set_access_token(user.acc_token,user.acc_secret)
 
 	api = tweepy.API(auth,wait_on_rate_limit=True)
+
+	api_vid = TwitterAPI(api_key,api_sec_key,user.acc_token,user.acc_secret)
+
 	user_obj = api.me()
 
 	filehandler = logging.FileHandler(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log', 'a')
@@ -315,7 +321,7 @@ def bot_logs(command=None):
 	if command == 'activate':		
 		bot_status = True
 		bot_men = Bot_mention(name=usernm,api=api,uid = user.id)
-		bot_re = Bot_reply(name=usernm,api=api,uid = user.id)
+		bot_re = Bot_reply(name=usernm,api=api,uid = user.id,api_vid=api_vid)
 		bot_men.start()
 		bot_re.start()
 		logging.info("Bot started")

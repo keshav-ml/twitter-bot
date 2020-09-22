@@ -8,7 +8,6 @@
 	
 	var tot_sub_rows = -1;
 	var tot_unsub_rows = -1;
-	var tot_tweet = -1;
 	function myFunction(imgs) {
 	  // Get the expanded image
 	  var expandImg = document.getElementById("expandedImg");
@@ -143,15 +142,7 @@
 		}
 	  
 	}
-	function create_tweet() {
-	  window.tot_tweet += 1
-	  var table = document.getElementById("tweet");
-	  var row = table.insertRow(window.tot_tweet);
-	  var cell1 = row.insertCell(0);
-	  cell1.innerHTML = "<input type='text' id='t"+window.tot_tweet+"' placeholder='Enter tweet here' style='width:100%;'>";
-	  
-	  
-	}
+	
 
 	function delete_row(id_str) {
 	  
@@ -163,27 +154,22 @@
 			window.tot_unsub_rows -= 1
 		}
 	}
-	function delete_tweet() {
-	  document.getElementById("tweet").deleteRow(window.tot_tweet);
-	  window.tot_tweet -= 1
-	}
+	
 
 	function compile_frm(){
 		var que_ans_sub = {};
 		var que_ans_unsub = {};
-		var tweets = [];
+		
  		for (var i = 0; i <= window.tot_sub_rows; i++) {
 			que_ans_sub[document.getElementById('qna_sub_q'+i).value] = document.getElementById('qna_sub_a'+i).value
 		}
 		for (var i = 0; i <= window.tot_unsub_rows; i++) {
 			que_ans_unsub[document.getElementById('qna_unsub_q'+i).value] = document.getElementById('qna_unsub_a'+i).value
 		}
-		for (var i = 0; i<= window.tot_tweet;i++){
-			tweets.push(document.getElementById('t'+i).value)
-		}
+		
 		document.getElementById("{{form.questions_sub.id}}").value = JSON.stringify(que_ans_sub);
 		document.getElementById("{{form.questions_unsub.id}}").value = JSON.stringify(que_ans_unsub);
-		document.getElementById("{{form.tweets.id}}").value = JSON.stringify(tweets);
+		
 		
 	}
 
@@ -208,10 +194,6 @@
         			{{ form.DM_reply_time.label }}
 		            <small>(in minutes)</small>
 		            {{ form.DM_reply_time() }}
-		        </td>
-		        <td style="text-align: left;">
-		    		{{ form.tweet_time.label }}
-            		{{ form.tweet_time() }}    	
 		        </td>
         	</tr>
         	<tr>
@@ -249,9 +231,6 @@
         <p style="display: none;" >
         	{{ form.questions_unsub() }}
         </p>
-        <p style="display: none;" >
-        	{{ form.tweets() }}
-        </p>
     
 
     </div>
@@ -281,22 +260,6 @@
 			<div style="height: 25px;" class="text-center">
 			<img onclick="delete_row('qna_unsub')" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right;height: 25px; width: 25px">
 			<img onclick="create_row('qna_unsub')" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;height: 25px; width: 25px;">
-
-			
-			</div>
-			
-			
-		</fieldset>
-    </div>
-    <div style="float: left; height: 100%; width: 100%;" class="py-2">
-    	<fieldset>
-    	<p class="h2" style="font-size: 30px;">Enter tweets</p>
-	    	<table id="tweet" style="width: 100%;" cellpadding="10px">
-			</table>
-			
-			<div style="height: 25px;" class="text-center">
-			<img onclick="delete_tweet()" src="{{ url_for('static',filename='minus.png') }}" class="img" style="float: right; height: 25px; width: 25px;">
-			<img onclick="create_tweet()" src="{{ url_for('static',filename='plus.png') }}" class="img" style="float: right;height: 25px; width: 25px;">
 
 			
 			</div>
@@ -448,10 +411,10 @@
     	var qna_unsub_field = document.getElementById('{{form.questions_unsub.id}}');
 
 
-    	var tweet_field = document.getElementById('{{form.tweets.id}}');
+    	
 		var table_sub_widget = document.getElementById('qna_sub');
 		var table_unsub_widget = document.getElementById('qna_unsub');
-		var tweet_table = document.getElementById('tweet')
+		
 		if (qna_sub_field.value != ""){
 			qna_obj = JSON.parse(qna_sub_field.value)
 			for(const key in qna_obj){
@@ -480,20 +443,7 @@
 			}
 			
 		}
-		if (tweet_field.value != ""){
-			twt_obj = JSON.parse(tweet_field.value)
-			for(const key in twt_obj){
-				window.tot_tweet += 1
-				var row = tweet_table.insertRow(window.tot_tweet);
-		  		var cell1 = row.insertCell(0);
-		  		
-		  		cell1.innerHTML = "<input type='text' id='t"+window.tot_tweet+"' value='"+twt_obj[key]+"' style='width:100%;'>";
-		  		
-				
-		  		
-			}
-			
-		}
+		
 
     </script>
 {% endblock %}
