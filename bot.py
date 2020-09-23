@@ -188,8 +188,14 @@ class Bot_reply(threading.Thread):
 				files_img = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
 				files_vid = ['media/'+str(self.uid)+'/vid/'+v for v in os.listdir('media/'+str(self.uid)+'/vid/')]
 
-				rd_img = random.randint(0,len(files_img)-1)
-				rd_vid = random.randint(0,len(files_vid)-1)
+				if len(files_img) > 0:
+					rd_img = random.randint(0,len(files_img)-1)
+				else:
+					rd_img = None
+				if len(files_vid) > 0: 
+					rd_vid = random.randint(0,len(files_vid)-1)
+				else:
+					rd_vid = None
 
 				qna_sub = json.loads(user_set.questions_sub)
 				qna_unsub = json.loads(user_set.questions_unsub)
@@ -214,32 +220,34 @@ class Bot_reply(threading.Thread):
 						sent = False
 						if any([True if v in msg.lower().split(' ') else False for v in ['pic','picture','image','sample']]):
 							try:
-								med = self.api.media_upload(filename  = files_img[rd_img])
-								self.api.send_direct_message(sender_id, text="Here's the sample image...",attachment_type='media', attachment_media_id=med.media_id)
-								sent = True
+								if rd_img:
+									med = self.api.media_upload(filename  = files_img[rd_img])
+									self.api.send_direct_message(sender_id, text="Here's the sample image...",attachment_type='media', attachment_media_id=med.media_id)
+									sent = True
 							except:
 								sent = False
 								logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
 						elif any([True if v in msg.lower().split(' ') else False for v in ['vid','video','vidz']]):
-							try:
-								bytes_sent = 0
-								total_bytes = os.path.getsize(files_vid[rd_vid])
-								file_vid = open(files_vid[rd_vid],'rb')
+							if rd_vid:
+								try:
+									bytes_sent = 0
+									total_bytes = os.path.getsize(files_vid[rd_vid])
+									file_vid = open(files_vid[rd_vid],'rb')
 
-								req = self.api_vid.request('media/upload',{'command':'INIT','media_type':'video/mp4', 'total_bytes':total_bytes})
-								med_id = req.json()['media_id']
-								seg_id = 0
-								while bytes_sent < total_bytes:
-									chunk = file_vid.read(4 * 1024 * 1024)
-									r = self.api_vid.request('media/upload', {'command':'APPEND', 'media_id':med_id, 'segment_index':seg_id}, {'media':chunk})
-									seg_id+=1
-									bytes_sent = file_vid.tell()
-								r = self.api_vid.request('media/upload', {'command':'FINALIZE', 'media_id':med_id})
-								self.api.send_direct_message(sender_id, text="Here's the sample video...",attachment_type='media', attachment_media_id=med_id)
-								sent = True
-							except:
-								sent = False
-								logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
+									req = self.api_vid.request('media/upload',{'command':'INIT','media_type':'video/mp4', 'total_bytes':total_bytes})
+									med_id = req.json()['media_id']
+									seg_id = 0
+									while bytes_sent < total_bytes:
+										chunk = file_vid.read(4 * 1024 * 1024)
+										r = self.api_vid.request('media/upload', {'command':'APPEND', 'media_id':med_id, 'segment_index':seg_id}, {'media':chunk})
+										seg_id+=1
+										bytes_sent = file_vid.tell()
+									r = self.api_vid.request('media/upload', {'command':'FINALIZE', 'media_id':med_id})
+									self.api.send_direct_message(sender_id, text="Here's the sample video...",attachment_type='media', attachment_media_id=med_id)
+									sent = True
+								except:
+									sent = False
+									logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
 						else:
 							if sender_id in user_set.sub_names.split(" "):
 								for que,ans in qna_sub.items():
