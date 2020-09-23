@@ -92,6 +92,10 @@ def customize_bot():
 	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
 	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
 	usr_settings = User_settings.query.filter_by(user_id=user.id)
+	if not usr_settings.first():
+		new_settings = User_settings(user_id = user.id,DM_reply_time= "10",block_names="",sub_names="",questions_sub="",questions_unsub="")
+		db.session.add(new_settings)
+		db.session.commit()
 	if usr_settings.first():	
 		set_obj = usr_settings.first().to_obj()
 		block_ids = []
