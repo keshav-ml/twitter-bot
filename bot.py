@@ -182,7 +182,10 @@ class Bot_reply(threading.Thread):
 			logging.info("reply thread running")
 			while True:
 				user_set = User_settings.query.filter_by(user_id=self.uid).first()
-				time.sleep(int(user_set.DM_reply_time)*60)
+				if user_set:
+					time.sleep(int(user_set.DM_reply_time)*60)
+				else:
+					time.sleep(10)
 				dms = reversed(self.api.list_direct_messages())
 
 				files_img = ['media/'+str(self.uid)+'/img/'+v for v in os.listdir('media/'+str(self.uid)+'/img/')]
