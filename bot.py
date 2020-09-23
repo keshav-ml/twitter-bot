@@ -200,8 +200,9 @@ class Bot_reply(threading.Thread):
 				else:
 					rd_vid = None
 
-				qna_sub = json.loads(user_set.questions_sub)
-				qna_unsub = json.loads(user_set.questions_unsub)
+				if user_set:
+					qna_sub = json.loads(user_set.questions_sub)
+					qna_unsub = json.loads(user_set.questions_unsub)
 
 				msg_path = app.config['UPLOAD_PATH']+str(self.uid)+"/ls_seen/msg_seen.txt"
 				prev_msg = self.get_msg(msg_path)		
@@ -252,24 +253,25 @@ class Bot_reply(threading.Thread):
 									sent = False
 									logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
 						else:
-							if sender_id in user_set.sub_names.split(" "):
-								for que,ans in qna_sub.items():
-									if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
-										try:
-											self.api.send_direct_message(sender_id,text=ans)
-											sent = True
-										except:
-											sent = False
-											logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
-							else:
-								for que,ans in qna_unsub.items():
-									if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
-										try:
-											self.api.send_direct_message(sender_id,text=ans)
-											sent = True
-										except:
-											sent = False
-											logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
+							if user_set:
+								if sender_id in user_set.sub_names.split(" "):
+									for que,ans in qna_sub.items():
+										if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
+											try:
+												self.api.send_direct_message(sender_id,text=ans)
+												sent = True
+											except:
+												sent = False
+												logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
+								else:
+									for que,ans in qna_unsub.items():
+										if td.jaccard(que.strip().lower(),msg.strip().lower()) > 9 or que.strip().lower() == msg.strip().lower():
+											try:
+												self.api.send_direct_message(sender_id,text=ans)
+												sent = True
+											except:
+												sent = False
+												logging.info('Error in replying to '+self.api.get_user(sender_id).screen_name+' sending static message instead.')
 						if not sent:
 							self.api.send_direct_message(sender_id,text="Hello! thank you for messaging, Im busy will get back to you after 5 mins.")
 							logging.info("Replied to DM :- "+self.api.get_user(sender_id).screen_name+' with static message')
