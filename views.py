@@ -74,15 +74,21 @@ def customize_bot():
 	path_to_media = app.config['UPLOAD_PATH']+str(user.id)+'/'
 	path_to_img = app.config['UPLOAD_PATH']+str(user.id)+'/img/'
 	path_to_vid = app.config['UPLOAD_PATH']+str(user.id)+'/vid/'
+	path_to_ls  = app.config['UPLOAD_PATH']+str(user.id)+'/ls_seen/'
 	if not os.path.exists(path_to_media):
 		os.makedirs(path_to_media)
 		os.makedirs(path_to_img)
 		os.makedirs(path_to_vid)
+		os.makedirs(path_to_ls)
 		f = open(app.config['UPLOAD_PATH']+str(user.id)+'/logs.log','w')
 		f.close()
 		f = open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json','w')
 		f.write("{}")
 		f.close()
+		file = open(path_to_ls+'last_seen.txt','w')
+		file.close()
+		file2 = open(path_to_ls+'msg_seen.txt','w')
+		file2.close()
 	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
 	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
 	usr_settings = User_settings.query.filter_by(user_id=user.id)
@@ -158,19 +164,9 @@ def index():
 	path_to_vid = app.config['UPLOAD_PATH']+str(user.id)+'/vid/'
 	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
 	v_names = [path_to_vid+f for f in os.listdir(path_to_vid)]
-
-	filename  = app.config['UPLOAD_PATH']+str(user.id)+'/ls_seen/'
-	if not os.path.exists(filename):
-		os.makedirs(filename)
-		file = open(filename+'last_seen.txt','w')
-		file.close()
-		file2 = open(filename+'msg_seen.txt','w')
-		file2.close()
 	
 	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
-	stop_eve = threading.Event()
-	
 	
 	tasks = json.load(open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json'))		
 	
