@@ -284,7 +284,9 @@ def post_add():
 	tasks[str(len(tasks))] = post
 	json.dump(tasks,open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json','w'))
 
-	logging.info("Tweet post created will tweet in"+str(time)+" seconds.")
+	logging.info('submitted time '+str(request.form.get('time'))+" conv time" + str(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M")) +" timestamp "+str(datetime.timestamp(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M"))))
+	logging.info('now '+str(datetime.now())+" timestamp "+str(datetime.timestamp(datetime.now())))
+	logging.info("Tweet post created will tweet in "+str(time)+" seconds.")
 
 	return redirect(url_for('index'))
 
