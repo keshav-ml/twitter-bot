@@ -267,10 +267,10 @@ def post_add():
 
 	api_vid = TwitterAPI(api_key,api_sec_key,user.acc_token,user.acc_secret)
 
-	time = datetime.timestamp(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M")) - datetime.timestamp(datetime.now())
+	
 
 	post = {}
-	post['time'] = time
+	post['time'] = request.form.get('time_diff')
 	post['media'] = request.form.get('media')
 	post['text'] = request.form.get('tweet_txt')
 
@@ -284,9 +284,8 @@ def post_add():
 	tasks[str(len(tasks))] = post
 	json.dump(tasks,open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json','w'))
 
-	logging.info('submitted time '+str(request.form.get('time'))+" conv time" + str(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M")) +" timestamp "+str(datetime.timestamp(datetime.strptime(request.form.get('time'),"%Y-%m-%dT%H:%M"))))
-	logging.info('now '+str(datetime.now())+" timestamp "+str(datetime.timestamp(datetime.now())))
-	logging.info("Tweet post created will tweet in "+str(time)+" seconds.")
+	
+	logging.info("Tweet post created will tweet in "+str(request.form.get('time_diff'))+" seconds.")
 
 	return redirect(url_for('index'))
 

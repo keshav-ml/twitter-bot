@@ -14,7 +14,21 @@
 </script> -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 
+<script type="text/javascript">
+  async function calc_diff(){
+    var datetime_submit = document.getElementById('datetimepicker-default').value;
+    
+    var datetime_now = new Date();
+    
+    var time_diff = Date.parse(datetime_submit) - Date.parse(datetime_now) 
+    
+    var time_field = document.getElementById('time_diff')
+    time_field.value = time_diff / 1000
 
+    
+
+  }
+</script>
 
     <!-- <link href="{{url_for('static',filename='prism.css')}}" rel="stylesheet" type="text/css" />
     <link href="{{url_for('static',filename='chosen.css')}}" rel="stylesheet" type="text/css" />
@@ -54,7 +68,7 @@
       
 </div>
     <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <form action="/post/add" method="post">
+    <form action="/post/add" method="post" onsubmit="calc_diff();">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -89,10 +103,11 @@
                   </optgroup>
                 </select>
               </div>
+              <input type="text" name="time_diff" style="display: none;" id="time_diff">
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="submit" class="btn btn-primary">Add Post</button>
+            <button type="submit"  class="btn btn-primary">Add Post</button>
           </div>
         </div>
       </div>
