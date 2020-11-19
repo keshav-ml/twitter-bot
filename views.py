@@ -14,6 +14,7 @@ from datetime import datetime
 import logging
 from PIL import Image, ImageFilter
 from bot import Bot_tweet, Bot_reply, Bot_mention
+from helper import GetDM
 
 from TwitterAPI import TwitterAPI
 
@@ -135,7 +136,6 @@ def customize_bot():
 
 		block_ids = " ".join([k for k in block_ids])
 		sub_ids = " ".join([k for k in sub_ids])
-		print(block_ids)
 		if usr_settings.first():
 			usr_settings.update(dict(DM_reply_time=form.DM_reply_time.data,block_names=block_ids,sub_names=sub_ids,questions_sub=form.questions_sub.data,questions_unsub=form.questions_unsub.data))
 		else:
@@ -164,6 +164,8 @@ def index():
 	auth = tweepy.OAuthHandler(api_key,api_sec_key)
 	auth.set_access_token(user.acc_token,user.acc_secret)
 
+	usr_settings = User_settings.query.filter_by(user_id=user.id).first()
+
 	path_to_img = app.config['UPLOAD_PATH']+str(user.id)+'/img/'
 	path_to_vid = app.config['UPLOAD_PATH']+str(user.id)+'/vid/'
 	i_names = [path_to_img+f for f in os.listdir(path_to_img)]
@@ -172,9 +174,17 @@ def index():
 	api = tweepy.API(auth,wait_on_rate_limit=True)
 	user_obj = api.me()
 	
+	DM_df, sender_data = GetDM(api)
+	if usr_settings:
+		for s in sender_data:
+			s['blocked'] = "Blocked" if s['id_str'] in usr_settings.block_names.split(" ") else "" 
+			s['sub'] = "Subscribed user" if s['id_str'] in usr_settings.sub_names.split(" ") else ""
+			
+			s['days_since_reply'] = (datetime.now() - datetime.fromtimestamp(DM_df[DM_df['sender_id'] == s['id_str']]['timestamp'].values[0] / 1000)).days 
+
 	tasks = json.load(open(app.config['UPLOAD_PATH']+str(user.id)+'/tasks.json'))		
 	
-	return render_template('index.html',user_obj=user_obj,im_files = i_names,v_files=v_names,tasks=tasks)
+	return render_template('index.html',user_obj=user_obj,im_files = i_names,v_files=v_names,tasks=tasks,DM_df=DM_df.to_json(),sender_data=sender_data)
 
 @app.route('/logout')
 def logout():
@@ -340,6 +350,20 @@ def bot_logs(command=None):
 			print(t.getName())
 
 	return render_template('bot_logs.html',user_obj=user_obj,bot_status=bot_status)
+
+
+@app.route('/block/<usr_id>')
+@login_required
+def bolck_usr(usr_id=None):
+	usernm = current_user.username
+	user = User.query.filter_by(username=usernm).first()
+	usr_settings = User_settings.query.filter_by(user_id=user.id)
+	block_names = usr_settings.first().block_names.split(' ')
+	block_names.append(usr_id)
+	usr_settings.update(dict(block_names=" ".join(block_names)))
+	db.session.commit()
+	return redirect(url_for('index'))
+
 
 
 

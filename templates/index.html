@@ -12,6 +12,7 @@
     $('#datetimepicker1').datetimepicker();
  });
 </script> -->
+
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
 
 <script type="text/javascript">
@@ -28,6 +29,17 @@
     
 
   }
+  function decodeJSON(encodedJSON) {
+  var decodedJSON = $('<div/>').html(encodedJSON).text();
+  return $.parseJSON(decodedJSON);
+ }
+  function fetch_chat(sender_id){
+    var caht_data = decodeJSON("{{DM_df}}");
+    console.log(caht_data);
+    {% for sender in sender_data %}
+      console.log(' {{sender["days_since_reply"]}}')
+    {% endfor %}
+  }
 </script>
 
     <!-- <link href="{{url_for('static',filename='prism.css')}}" rel="stylesheet" type="text/css" />
@@ -41,7 +53,7 @@
 </script> -->
     
 
-<div style="float: left; height: 100%; width: 300px;">
+<div style="float: left; height: 100%; width: 200px;">
   <div>
       
       <img src="{{ user_obj.profile_image_url }}" class="img-fluid rounded-circle py-5"  style="margin-left: 50px;">
@@ -67,6 +79,17 @@
     
       
 </div>
+
+
+
+
+
+
+
+
+
+
+
     <div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <form action="/post/add" method="post" onsubmit="calc_diff();">
       <div class="modal-dialog" role="document">
@@ -117,8 +140,46 @@
 
 
 
+<div style="float: left;width: 80%;">
+<div  style="width: 30%;">
+  {% if sender_data %}
+  {% for sender in sender_data %}
+  
+  
+    <div style="width: 100%; background-color: #dbd9d9; border-bottom: 1px solid black; height: 200px;" class="py-2">
+        <div style="float: left; margin-left: 20px;" onclick="fetch_chat('{{sender.id_str}}');">
+      <img src="{{ sender.profile_image_url }}" class="img-fluid navbar-brand rounded-circle py-0"  >
+      </div>
+      <div style="float: left;">
+      <span class="navbar-text py-0" >{{sender.screen_name}}</span><br>
+      <span class="navbar-text py-0" >{{sender.blocked}}</span>
+      <span class="navbar-text py-0" >{{sender.sub}}</span>
+      {% if sender['days_since_reply'] >= 3 and sender['sub'] == "" and not (sender.blocked == 'Blocked')%}
+      <div>
+        The user has not messaged since {{sender['days_since_reply']}} consider blocking him.
+        <a class="btn btn-sm btn btn-outline-danger" href="/block/{{sender.id_str}}" style="margin-right: 20px;">Block</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  {% endfor %}
+  {% endif %}
+</div>
+
+</div>
 
 
+<!------ Include the above in your HEAD tag ---------->
+
+
+
+
+
+
+
+
+    
   
   
 

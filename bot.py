@@ -123,6 +123,8 @@ class Bot_mention(threading.Thread):
 				filename  = app.config['UPLOAD_PATH']+str(self.uid)+'/ls_seen/last_seen.txt'
 				mentions = reversed(self.api.mentions_timeline(self.get_last_seen(filename)))
 				for mention in mentions:
+					if mention.user.id_str == self.api.me().id_str:
+						continue
 					last_id = mention.id
 					self.store_last_seen(last_id,filename)
 					self.api.update_status("@"+str(mention.user.screen_name)+" DM me for more content",mention.id)
