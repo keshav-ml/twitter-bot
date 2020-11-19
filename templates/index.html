@@ -156,7 +156,7 @@
       <span class="navbar-text py-0" >{{sender.sub}}</span>
       {% if sender['days_since_reply'] >= 3 and sender['sub'] == "" and not (sender.blocked == 'Blocked')%}
       <div>
-        The user has not messaged since {{sender['days_since_reply']}} consider blocking him.
+        The user has not messaged since {{sender['days_since_reply']}} days consider blocking him.
         <a class="btn btn-sm btn btn-outline-danger" href="/block/{{sender.id_str}}" style="margin-right: 20px;">Block</a>
       </div>
       {% endif %}
