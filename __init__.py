@@ -15,6 +15,7 @@ login = LoginManager(app)
 login.login_view = 'login'
 app.config['SECRET_KEY'] = "Everything will repeat"
 app.config['UPLOAD_PATH'] = 'media/'
+app.config['DEBUG'] = True	
 api_key = "kxNP9B8P5PoqTddS9bKkhQADd"
 api_sec_key = "Asv6TgPPc5ONl6saKm8aAz9aIC4sKoVCEeJvBbUFUZKXTMlVbM"
 
